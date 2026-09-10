@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VitalSync — Clinical Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ================= CLINICAL DESIGN SYSTEM (PORTAL) ================= */
+  :root {
+    --bg: #F6F8F9;
+    --surface: #FFFFFF;
+    --border: #E3E8EA;
+    --text-primary: #1B2426;
+    --text-secondary: #5B6B70;
+    --accent: #0F766E;
+    --planned-line: #0F766E;
+    --eaten-line: #5B6B70;
+    --success: #1B7F4B;
+    --success-bg: #EBF7EE;
+    --warning: #B7791F;
+    --warning-bg: #FEF7E6;
+    --critical: #B42318;
+    --critical-bg: #FEF3F2;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+    --radius: 6px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+  body { background: var(--bg); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+  button { cursor: pointer; border: none; font-family: inherit; }
+  input, select, textarea { font-family: inherit; font-size: 14px; color: var(--text-primary); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ===== Top Navigation Bar ===== */
+  .topbar {
+    background: #11191B;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid #243134;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .brand-badge {
+    background: #1E2E31;
+    color: #8AE3D2;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .refresh-action {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid #36494D;
+    color: #CFE0E2;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .15s;
+    cursor: pointer;
+  }
+  .refresh-action:hover { background: #223235; color: #FFFFFF; }
+
+  /* ===== CLINICAL DOCTOR PORTAL ===== */
+  .portal-view {
+    display: flex;
+    max-width: 1280px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 24px;
+    gap: 24px;
+    position: relative;
+  }
+
+  /* Left Sidebar (240px) */
+  .portal-sidebar { width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+  
+  .c-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .clinic-header { border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
+  .clinic-title { font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+  .clinic-meta { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+
+  .btn-enroll {
+    width: 100%;
+    background: var(--accent);
+    color: #FFFFFF;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    font-weight: 500;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background .15s;
+  }
+  .btn-enroll:hover { background: #0c625c; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* 2A.1 Left Nav Patient List */
+  .c-patient-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .c-patient-item {
+    padding: 9px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .12s ease;
+  }
+  .c-patient-item:hover { background: var(--bg); }
+  .c-patient-item.active {
+    background: #F0FDF4;
+    border-color: #BBEFDD;
+  }
+  .c-p-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .c-p-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c-p-sub { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+  
+  .c-pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--radius);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .c-pill.active-pill { background: var(--success-bg); color: var(--success); }
+  .c-pill.invited-pill { background: var(--warning-bg); color: var(--warning); }
+  
+  /* Alert Badge in Nav */
+  .c-alert-badge {
+    background: var(--critical);
+    color: #FFFFFF;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Main Clinical Decision Surface */
+  .portal-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+
+  /* 2A.2 Patient Header (Slim Bar) */
+  .patient-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+  }
+  .patient-primary { display: flex; flex-direction: column; gap: 2px; }
+  .patient-name-title { font-size: 18px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
+  .patient-clinical-meta { font-size: 12.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .patient-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .clinical-pill {
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-primary);
+  }
+  .clinical-pill.excl { background: #FAF5FF; color: #6B21A8; border-color: #E9D5FF; }
+  .clinical-pill.allergen { background: var(--warning-bg); color: #92400E; border-color: #FDE68A; }
+  .clinical-pill.adherence { background: #F0FDF4; color: var(--accent); border-color: #BBEFDD; font-weight: 600; }
+
+  /* 2A.3 Alerts Panel (Unresolved alerts + Mark Reviewed) */
+  .alerts-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .alert-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    font-size: 12.5px;
+  }
+  .alert-item-row.critical { border-left: 3px solid var(--critical); background: #FFFBFB; }
+  .alert-item-row.warning { border-left: 3px solid var(--warning); background: #FFFCF5; }
+  .btn-resolve {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: var(--radius);
+    transition: all .12s;
+  }
+  .btn-resolve:hover { background: var(--accent); color: #FFFFFF; border-color: var(--accent); }
+
+  /* 2B.5 Range Selector Bar */
+  .range-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .range-toggle-group { display: flex; gap: 4px; background: var(--bg); padding: 2px; border-radius: var(--radius); }
+  .range-btn {
+    padding: 5px 12px;
+    border-radius: 4px;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all .12s ease;
+  }
+  .range-btn.active {
+    background: var(--surface);
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 2B.6 3 Line Charts Grid (Glucose, BP, HR) */
+  .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .chart-title-bar { display: flex; align-items: center; justify-content: space-between; }
+  .chart-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+  .chart-legend { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .trend-svg { width: 100%; height: 95px; }
+
+  /* 2B.7 Nutrition Trends: Planned vs Eaten */
+  .nutrition-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .nutrition-legend-bar { display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--text-secondary); }
+  .legend-line-planned { display: inline-block; width: 14px; height: 2.5px; background: #0F766E; vertical-align: middle; margin-right: 4px; }
+  .legend-line-eaten { display: inline-block; width: 14px; height: 2.5px; background: #5B6B70; vertical-align: middle; margin-right: 4px; }
+  
+  /* Today Row: Eaten vs Planned */
+  .today-macro-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+  }
+  .macro-tile { display: flex; flex-direction: column; gap: 2px; }
+  .macro-lbl { font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+  .macro-val { font-size: 16px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .macro-ref { font-size: 11px; color: var(--text-secondary); }
+  .macro-ref.warn-over { color: var(--critical); font-weight: 600; }
+
+  /* 4 Nutrition Charts */
+  .nutrition-charts-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .nutri-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; }
+  .nutri-box-title { font-size: 11.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+
+  /* 2A.4 Guidance Box */
+  .guidance-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .guidance-textarea {
+    width: 100%;
+    height: 70px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    resize: none;
+    margin-top: 4px;
+  }
+  .guidance-textarea:focus { outline: none; border-color: var(--accent); }
+  .guidance-meta-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .btn-send-guidance {
+    background: var(--accent);
+    color: #FFFFFF;
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    transition: background .15s;
+  }
+  .btn-send-guidance:hover { background: #0c625c; }
+  .last-guidance-info { font-size: 11.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+  /* 2B.8 DRILL-DOWN PANEL (420px, Slides in from Right) */
+  .drilldown-panel {
+    position: fixed;
+    top: 0;
+    right: -450px;
+    width: 420px;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: -4px 0 20px rgba(0,0,0,.12);
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    transition: right .25s ease;
+  }
+  .drilldown-panel.open { right: 0; }
+  .drilldown-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+  }
+  .drilldown-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .btn-close-drill { background: transparent; font-size: 18px; color: var(--text-secondary); padding: 2px 6px; }
+  .drilldown-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  .drill-section { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .drill-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); margin-bottom: 8px; }
+  .drill-plan-slot { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid #F0F3F4; }
+  .drill-plan-slot:last-child { border-bottom: none; }
+  .drill-slot-name { font-weight: 500; color: var(--text-secondary); text-transform: capitalize; width: 105px; font-size: 12px; }
+  .drill-slot-dish { flex: 1; font-weight: 500; color: var(--text-primary); }
+  .drill-slot-kcal { font-size: 11px; color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 600; margin-left: 8px; }
+
+  /* Clean Tables */
+  .c-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .c-table th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-weight: 600; font-size: 11px; }
+  .c-table td { padding: 6px 4px; border-bottom: 1px solid #F0F3F4; color: var(--text-primary); font-size: 11.5px; }
+  .c-table td.r, .c-table th.r { text-align: right; }
+
+  /* Modals */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-card {
+    background: var(--surface);
+    border-radius: 8px;
+    width: 480px;
+    max-width: 95vw;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+  .form-row { display: flex; flex-direction: column; gap: 4px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .form-input { border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13.5px; }
+  .form-input:focus { outline: none; border-color: var(--accent); }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+  .btn-sec { background: var(--bg); border: 1px solid var(--border); color: var(--text-secondary); padding: 7px 14px; border-radius: var(--radius); font-size: 13px; font-weight: 500; }
+  .btn-pri { background: var(--accent); color: #FFFFFF; padding: 7px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; }
+  .btn-pri:hover { background: #0c625c; }
+  .field-err-msg { font-size: 11px; color: var(--critical); display: none; margin-top: 2px; }
+
+  .c-chips-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .c-chip { padding: 5px 10px; border-radius: var(--radius); font-size: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text-primary); cursor: pointer; }
+  .c-chip.active { background: var(--accent); color: #FFFFFF; border-color: var(--accent); font-weight: 500; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1B2426; color: #FFFFFF; font-size: 13px; padding: 10px 18px; border-radius: var(--radius); box-shadow: 0 4px 14px rgba(0,0,0,.18); opacity: 0; transition: opacity .25s; z-index: 120; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .spinner-ring { width: 20px; height: 20px; border: 2px solid #E3E8EA; border-top-color: var(--accent); border-radius: 50%; animation: c-spin .7s linear infinite; display: inline-block; }
+  @keyframes c-spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 960px) {
+    .portal-view { flex-direction: column; }
+    .portal-sidebar { width: 100%; }
+    .chart-grid-3, .nutrition-charts-grid, .today-macro-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= TOP BAR ================= -->
+<div class="topbar" id="topbar">
+  <div class="brand">
+    <span>VitalSync</span>
+    <span class="brand-badge">Clinical Decision Portal</span>
+  </div>
+  <button class="refresh-action" onclick="refreshPlatform(true)">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    Sync Live
+  </button>
+</div>
+
+<!-- ================= CLINICAL DOCTOR PORTAL ================= -->
+<div class="portal-view" id="portalView">
+  <!-- 2A.1 Left Nav / Patient List (240px) -->
+  <div class="portal-sidebar">
+    <div class="c-card">
+      <div class="clinic-header">
+        <div class="clinic-title">Sunrise Diabetes Clinic</div>
+        <div class="clinic-meta">Dr. Anita Rao · Diabetology</div>
+      </div>
+      <button class="btn-enroll" onclick="openEnrollModal()">+ Enroll Patient</button>
+    </div>
+
+    <!-- Patients List with Status Pill & Alert Badges -->
+    <div class="c-card">
+      <div class="section-label">Patients</div>
+      <ul class="c-patient-list" id="docPatientList">
+        <li style="padding:10px;text-align:center;"><div class="spinner-ring" style="margin:0 auto 6px;"></div><span style="font-size:12px;color:var(--text-secondary);">Loading...</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Main Patient Dashboard -->
+  <div class="portal-main" id="portalMain">
+    <div class="c-card" style="padding:40px;text-align:center;">
+      <div class="spinner-ring" style="margin:0 auto 10px;"></div>
+      <div style="font-size:13px;color:var(--text-secondary);">Loading clinical decision telemetry...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2B.8 Day Drilldown Sliding Panel (420px) -->
+<div class="drilldown-panel" id="drilldownPanel">
+  <div class="drilldown-head">
+    <div class="drilldown-title" id="drillDateTitle">Day Details</div>
+    <button class="btn-close-drill" onclick="closeDrilldown()">✕</button>
+  </div>
+  <div class="drilldown-body" id="drilldownBody"></div>
+</div>
+
+<!-- Enroll Patient Modal -->
+<div class="modal-overlay" id="enrollModal">
+  <div class="modal-card">
+    <div class="modal-title">Enroll New Patient</div>
+    <div id="enrollFormBox">
+      <div class="form-row" style="margin-bottom:10px;">
+        <label class="form-label">Full Name *</label>
+        <input class="form-input" id="eName" placeholder="e.g. Ramesh Kumar">
+        <div class="field-err-msg" id="err-eName">Patient name is required</div>
+      </div>
+      <div class="form-grid-2" style="margin-bottom:10px;">
+        <div class="form-row">
+          <label class="form-label">Date of Birth *</label>
+          <input type="date" class="form-input" id="eDob">
+          <div class="field-err-msg" id="err-eDob">Date of birth is required</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Gender *</label>
+          <select class="form-input" id="eGender">
+            <option value="" disabled selected>Select gender...</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="field-err-msg" id="err-eGender">Gender is required</div>
+        </div>
+      </div>
+      <div class="form-grid-2" style="margin-bottom:10px;">
+        <div class="form-row">
+          <label class="form-label">Height (cm) *</label>
+          <input type="number" class="form-input" id="eHeight" placeholder="170">
+          <div class="field-err-msg" id="err-eHeight">Height is required</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Weight (kg) *</label>
+          <input type="number" class="form-input" id="eWeight" placeholder="75">
+          <div class="field-err-msg" id="err-eWeight">Weight is required</div>
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:10px;">
+        <label class="form-label">Regional Cuisine / State *</label>
+        <select class="form-input" id="eState"></select>
+        <div class="field-err-msg" id="err-eState">Regional cuisine state is required</div>
+      </div>
+      <div class="form-row" style="margin-bottom:10px;">
+        <label class="form-label">Phone Number *</label>
+        <input class="form-input" id="ePhone" value="+91 ">
+        <div class="field-err-msg" id="err-ePhone">Valid 10-digit phone number with +91 is required</div>
+      </div>
+      <div class="form-row" style="margin-bottom:10px;">
+        <label class="form-label">Dietary Exclusions</label>
+        <div class="c-chips-row" id="enrollExclChips"></div>
+      </div>
+      <div class="form-row" style="margin-bottom:10px;">
+        <label class="form-label">Allergies</label>
+        <div class="c-chips-row" id="enrollAllergenChips"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sec" onclick="closeEnrollModal()">Cancel</button>
+        <button class="btn-pri" id="btnSubmitEnroll" onclick="submitEnrollment()">Generate Invitation</button>
+      </div>
+    </div>
+    <div id="enrollDoneBox" style="display:none;text-align:center;">
+      <div style="font-size:14px;color:var(--success);font-weight:600;margin-bottom:6px;">Patient Enrolled Successfully ✓</div>
+      <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.5;margin-bottom:12px;">
+        Invite generated for <b id="donePatientName"></b>.
+      </div>
+      <div style="background:var(--bg);padding:10px;border-radius:var(--radius);border:1px solid var(--border);word-break:break-all;font-size:12px;font-family:monospace;margin-bottom:4px;" id="doneLinkText"></div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-bottom:14px;">
+        PoC demo only — in production, the link and OTP are sent to the patient's mobile by SMS and are never shown to the clinic.
+      </div>
+      <button class="btn-pri" style="width:100%;" onclick="closeEnrollModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+const STATES_LIST = [
+  "Telangana", "Tamil Nadu", "Andhra Pradesh", "Karnataka", "Kerala",
+  "Maharashtra", "Gujarat", "Punjab", "West Bengal", "Rajasthan",
+  "Uttar Pradesh", "Bihar", "Odisha", "Madhya Pradesh", "Assam", "Haryana"
+];
+
+const EXCLUSION_OPTIONS = ["All meat", "Chicken", "Mutton", "Pork", "Beef", "Seafood", "Egg", "Dairy"];
+const ALLERGEN_OPTIONS = ["Nuts", "Dairy", "Gluten", "Soy", "Shellfish"];
+const MEATS = ["Chicken", "Mutton", "Pork", "Beef", "Seafood"];
+
+let patients = [];
+let selectedPatientId = null;
+let currentPatientDoc = null;
+let currentRangeDays = 30;
+let vTrendData = [];
+let nTrendData = [];
+let pTrendData = [];
+let allAlerts = [];
+let enrollExcl = new Set();
+let enrollAllergens = new Set();
+let createdPatientId = null;
+
+const $ = id => document.getElementById(id);
+
+function toast(msg){
+  const t = $('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function calcAge(dobStr){
+  if(!dobStr) return 50;
+  const d = new Date(dobStr);
+  const now = new Date();
+  let a = now.getFullYear() - d.getFullYear();
+  return (isNaN(a) || a < 1) ? 52 : a;
+}
+
+function formatExclusions(exclList){
+  if(!exclList || !exclList.length) return '';
+  const meats = new Set(["Chicken", "Mutton", "Pork", "Beef", "Seafood"]);
+  const hasAllMeat = exclList.some(e => e && e.toLowerCase() === 'all meat');
+  let list = [];
+  if(hasAllMeat){
+    list.push("All meat");
+    exclList.forEach(e => {
+      if(e && !meats.has(e) && e.toLowerCase() !== 'all meat') list.push(e);
+    });
+  } else {
+    list = [...exclList];
+  }
+  return list.join(', ');
+}
+
+function formatLocalTs(tsStr){
+  if(!tsStr) return '';
+  const d = new Date(tsStr);
+  if(isNaN(d.getTime())) return tsStr;
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
+function formatLocalTimeOnly(tsStr){
+  if(!tsStr) return '—';
+  const d = new Date(tsStr);
+  if(isNaN(d.getTime())) return tsStr.length >= 16 ? tsStr.substring(11, 16) : tsStr;
+  return d.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    closeDrilldown();
+  }
+});
+
+/* =================== INIT & DATA =================== */
+window.addEventListener('DOMContentLoaded', () => {
+  populateStates();
+  initDocPortal();
+  setInterval(fetchAlerts, 15000);
+});
+
+function populateStates(){
+  const html = `<option value="" disabled selected>Select state...</option>` + STATES_LIST.map(s => `<option value="${s}">${s}</option>`).join('');
+  if($('eState')) $('eState').innerHTML = html;
+}
+
+async function initDocPortal(){
+  try {
+    const [pRes, aRes] = await Promise.all([
+      fetch('/api/org/patients'),
+      fetch('/api/org/alerts')
+    ]);
+    if(pRes.ok) patients = await pRes.json();
+    if(aRes.ok) allAlerts = await aRes.json();
+
+    if(!selectedPatientId && patients.length > 0){
+      // 1. Patient with the most recent unresolved alert if any exists
+      const unresolved = allAlerts.filter(a => !a.resolved);
+      let alertPatientId = null;
+      if(unresolved.length > 0){
+        const sorted = [...unresolved].sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+        for(const al of sorted){
+          const pMatch = patients.find(p => p.id === al.patient_id);
+          if(pMatch && pMatch.status === 'active'){
+            alertPatientId = pMatch.id;
+            break;
+          }
+        }
+      }
+
+      if(alertPatientId){
+        selectedPatientId = alertPatientId;
+      } else {
+        // 2. Otherwise the first ACTIVE patient in the list
+        const firstActive = patients.find(p => p.status === 'active');
+        if(firstActive){
+          selectedPatientId = firstActive.id;
+        } else {
+          selectedPatientId = patients[0]?.id || null;
+        }
+      }
+    }
+
+    renderDocPatientList();
+    if(selectedPatientId){
+      await loadPatientData(selectedPatientId);
+    }
+  } catch(e){
+    console.error('Portal init error:', e);
+    $('docPatientList').innerHTML = `<li style="font-size:12px;color:var(--critical);padding:8px;">Failed to initialize portal</li>`;
+  }
+}
+
+async function refreshPlatform(isUser = false){
+  try {
+    const [pRes, aRes] = await Promise.all([
+      fetch('/api/org/patients'),
+      fetch('/api/org/alerts')
+    ]);
+    if(pRes.ok) patients = await pRes.json();
+    if(aRes.ok) allAlerts = await aRes.json();
+    renderDocPatientList();
+    if(selectedPatientId){
+      await loadPatientData(selectedPatientId);
+    }
+    if(isUser) toast('Live data synchronized');
+  } catch(e) {
+    console.error('Refresh error:', e);
+  }
+}
+
+async function fetchPatients(){
+  try {
+    const res = await fetch('/api/org/patients');
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    patients = await res.json();
+    renderDocPatientList();
+  } catch(err){
+    $('docPatientList').innerHTML = `<li style="font-size:12px;color:var(--critical);padding:8px;">Failed to load patients</li>`;
+  }
+}
+
+async function fetchAlerts(){
+  try {
+    const res = await fetch('/api/org/alerts');
+    if(res.ok){
+      allAlerts = await res.json();
+      renderDocPatientList();
+      if(selectedPatientId) renderAlertsPanel();
+    }
+  } catch(e){}
+}
+
+async function loadPatientData(pid){
+  try {
+    const [pRes, vRes, nRes, plRes] = await Promise.all([
+      fetch(`/api/patient/${pid}`),
+      fetch(`/api/patient/${pid}/vitals?days=${currentRangeDays}`),
+      fetch(`/api/patient/${pid}/nutrition?days=${currentRangeDays}`),
+      fetch(`/api/patient/${pid}/plans?days=${currentRangeDays}`)
+    ]);
+    if(!pRes.ok) throw new Error(`HTTP ${pRes.status}`);
+    currentPatientDoc = await pRes.json();
+    vTrendData = vRes.ok ? await vRes.json() : [];
+    nTrendData = nRes.ok ? await nRes.json() : [];
+    pTrendData = plRes.ok ? await plRes.json() : [];
+    renderDocDashboard();
+  } catch(err){
+    $('portalMain').innerHTML = `<div style="padding:40px;text-align:center;color:var(--critical);font-size:13px;">Error loading record: ${err.message}</div>`;
+  }
+}
+
+async function setRange(days){
+  currentRangeDays = days;
+  if(selectedPatientId){
+    await loadPatientData(selectedPatientId);
+  }
+}
+
+async function resolveAlert(alertId){
+  try {
+    const res = await fetch(`/api/alerts/${alertId}/resolve`, { method: 'POST' });
+    if(res.ok){
+      await fetchAlerts();
+      await fetchPatients();
+      if(selectedPatientId) await loadPatientData(selectedPatientId);
+      toast('Alert marked as reviewed ✓');
+    }
+  } catch(e){
+    toast('Error: ' + e.message);
+  }
+}
+
+function selectPatient(pid){
+  selectedPatientId = pid;
+  renderDocPatientList();
+  loadPatientData(pid);
+}
+
+/* =================== DOCTOR PORTAL RENDERING =================== */
+function renderDocPatientList(){
+  if(!patients.length){
+    $('docPatientList').innerHTML = `<li style="font-size:12px;color:var(--text-secondary);padding:6px;">No patients found.</li>`;
+    return;
+  }
+  $('docPatientList').innerHTML = patients.map(p => {
+    const isSel = p.id === selectedPatientId;
+    const age = calcAge(p.dob);
+    const isInvited = p.status === 'invited';
+    const unresolvedCount = allAlerts.filter(a => a.patient_id === p.id && !a.resolved).length;
+
+    return `
+      <li class="c-patient-item ${isSel ? 'active' : ''}" onclick="selectPatient('${p.id}')">
+        <div class="c-p-head">
+          <span class="c-p-name">${p.name || 'Patient'}</span>
+          <span class="c-pill ${isInvited ? 'invited-pill' : 'active-pill'}">${p.status || 'active'}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">
+          <span class="c-p-sub num">${age} y · ${p.gender || '—'}</span>
+          ${unresolvedCount > 0 ? `<span class="c-alert-badge num">${unresolvedCount}</span>` : ''}
+        </div>
+      </li>
+    `;
+  }).join('');
+}
+
+function renderAlertsPanel(){
+  const container = $('patientAlertsContainer');
+  if(!container) return;
+  const pAlerts = allAlerts.filter(a => a.patient_id === selectedPatientId && !a.resolved);
+  if(!pAlerts.length){
+    container.innerHTML = `<div style="font-size:12.5px;color:var(--text-secondary);padding:4px 0;">No active unresolved alerts for this patient.</div>`;
+    return;
+  }
+  container.innerHTML = pAlerts.map(a => {
+    const timeStr = formatLocalTs(a.ts);
+    return `
+      <div class="alert-item-row ${a.severity || 'warning'}">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="c-pill" style="${a.severity === 'critical' ? 'background:var(--critical-bg);color:var(--critical);' : 'background:var(--warning-bg);color:var(--warning);'}">${a.severity ? a.severity.toUpperCase() : 'ALERT'}</span>
+          <span style="font-weight:500;color:var(--text-primary);">${a.message || 'Abnormal reading'}</span>
+          <span style="color:var(--text-secondary);font-size:11px;" class="num">${timeStr}</span>
+        </div>
+        <button class="btn-resolve" onclick="resolveAlert('${a.id}')">Mark Reviewed</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderDocDashboard(){
+  if(!currentPatientDoc || !currentPatientDoc.profile) return;
+  const p = currentPatientDoc.profile;
+  const age = calcAge(p.dob);
+  const isInvited = p.status === 'invited';
+  const exclusions = p.food_exclusions || [];
+  const allergens = p.allergens || [];
+  const adherence7d = currentPatientDoc.adherence_7d || '0 of last 7 days logged';
+  const bmiStr = p.bmi ? `BMI ${p.bmi.toFixed(1)}` : 'BMI 26.5';
+
+  if(isInvited){
+    $('portalMain').innerHTML = `
+      <div class="patient-banner">
+        <div class="patient-primary">
+          <div class="patient-name-title">${p.name}</div>
+          <div class="patient-clinical-meta num">${age} y · ${p.gender} · ${p.height_cm || 162} cm / ${p.weight_kg || 64} kg (${bmiStr})</div>
+          <div class="patient-chips" style="margin-top:4px;">
+            ${exclusions.length ? `<span class="clinical-pill excl">Excludes: ${formatExclusions(exclusions)}</span>` : '<span class="clinical-pill">No Exclusions</span>'}
+            <span class="c-pill invited-pill">Invited</span>
+          </div>
+        </div>
+      </div>
+      <div class="c-card" style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        Patient invited. Awaiting mobile app verification and initial vitals telemetry.
+      </div>
+    `;
+    return;
+  }
+
+  // Today row calculations
+  const latestNutri = (nTrendData && nTrendData.length) ? nTrendData[nTrendData.length - 1] : { kcal: 0, carbs_g: 0, sugar_g: 0, sodium_mg: 0, protein_g: 0 };
+  const latestPlan = (pTrendData && pTrendData.length) ? pTrendData[pTrendData.length - 1] : {};
+  const planNutri = latestPlan.nutrition_summary || currentPatientDoc.plan_today?.nutrition_summary || { kcal: 1500, carbs_g: 165, sugar_g: 15, sodium_mg: 1600, protein_g: 52 };
+
+  const eatenKcal = latestNutri.kcal || 0;
+  const eatenCarbs = latestNutri.carbs_g || 0;
+  const eatenSugar = latestNutri.sugar_g || 0;
+  const eatenSodium = latestNutri.sodium_mg || 0;
+  const eatenProtein = latestNutri.protein_g || 0;
+
+  const overKcal = eatenKcal > (planNutri.kcal * 1.2);
+  const overCarbs = eatenCarbs > (planNutri.carbs_g * 1.2);
+  const overSugar = eatenSugar > (planNutri.sugar_g * 1.2);
+  const overSodium = eatenSodium > (planNutri.sodium_mg * 1.2);
+  const overProtein = eatenProtein > (planNutri.protein_g * 1.2);
+
+  const guideTime = p.guide_updated_at ? formatLocalTs(p.guide_updated_at) : '';
+
+  $('portalMain').innerHTML = `
+    <!-- 2A.2 Slim Header Bar -->
+    <div class="patient-banner">
+      <div class="patient-primary">
+        <div class="patient-name-title">${p.name}</div>
+        <div class="patient-clinical-meta num">${age} y · ${p.gender} · ${p.height_cm || 170} cm / ${p.weight_kg || 78} kg (${bmiStr})</div>
+        <div class="patient-chips" style="margin-top:6px;">
+          ${exclusions.length ? `<span class="clinical-pill excl">Excludes: ${formatExclusions(exclusions)}</span>` : '<span class="clinical-pill">No Exclusions</span>'}
+          ${allergens.length ? `<span class="clinical-pill allergen">Allergies: ${allergens.join(', ')}</span>` : ''}
+          <span class="c-pill active-pill">Active</span>
+          <span class="clinical-pill adherence num">${adherence7d}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2A.3 Alerts Panel -->
+    <div class="alerts-panel">
+      <div class="section-label">Patient Alerts</div>
+      <div id="patientAlertsContainer"></div>
+    </div>
+
+    <!-- 2B.5 Range Selector Bar -->
+    <div class="range-bar">
+      <div class="section-label" style="margin-bottom:0;">Clinical Telemetry & Nutrition Trends</div>
+      <div class="range-toggle-group">
+        <button class="range-btn ${currentRangeDays === 7 ? 'active' : ''}" onclick="setRange(7)">Weekly (7 d)</button>
+        <button class="range-btn ${currentRangeDays === 30 ? 'active' : ''}" onclick="setRange(30)">Monthly (30 d)</button>
+        <button class="range-btn ${currentRangeDays === 90 ? 'active' : ''}" onclick="setRange(90)">Quarterly (90 d)</button>
+      </div>
+    </div>
+
+    <!-- 2B.6 Vitals Trends 3 Line Charts -->
+    <div class="chart-grid-3">
+      <div class="chart-card">
+        <div class="chart-title-bar">
+          <span class="chart-title">Fasting Glucose (mg/dL)</span>
+          <span class="chart-legend"><span class="legend-dot" style="background:#0F766E;"></span> Ref: 80–130</span>
+        </div>
+        <svg class="trend-svg" id="svgGlucose" viewBox="0 0 300 95"></svg>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title-bar">
+          <span class="chart-title">Blood Pressure (mmHg)</span>
+          <div class="chart-legend">
+            <span><span class="legend-dot" style="background:#0F766E;"></span> Sys</span>
+            <span><span class="legend-dot" style="background:#5B6B70;"></span> Dia</span>
+          </div>
+        </div>
+        <svg class="trend-svg" id="svgBP" viewBox="0 0 300 95"></svg>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title-bar">
+          <span class="chart-title">Heart Rate (bpm)</span>
+          <span class="chart-legend"><span class="legend-dot" style="background:#0F766E;"></span> Resting</span>
+        </div>
+        <svg class="trend-svg" id="svgHR" viewBox="0 0 300 95"></svg>
+      </div>
+    </div>
+
+    <!-- 2B.7 Nutrition Trends: Planned vs Eaten -->
+    <div class="nutrition-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);">Nutrition Trends — Planned vs Eaten</div>
+        <div class="nutrition-legend-bar">
+          <span><span class="legend-line-planned"></span> Planned</span>
+          <span><span class="legend-line-eaten"></span> Eaten</span>
+        </div>
+      </div>
+
+      <!-- Today Row -->
+      <div class="today-macro-row">
+        <div class="macro-tile">
+          <span class="macro-lbl">Energy (kcal)</span>
+          <span class="macro-val">${eatenKcal} / ${planNutri.kcal}</span>
+          <span class="macro-ref ${overKcal ? 'warn-over' : ''}">${overKcal ? '▲ >20% over plan' : 'Planned target'}</span>
+        </div>
+        <div class="macro-tile">
+          <span class="macro-lbl">Carbohydrates (g)</span>
+          <span class="macro-val">${eatenCarbs} / ${planNutri.carbs_g}</span>
+          <span class="macro-ref ${overCarbs ? 'warn-over' : ''}">${overCarbs ? '▲ >20% over plan' : 'Planned target'}</span>
+        </div>
+        <div class="macro-tile">
+          <span class="macro-lbl">Sugar intake (g)</span>
+          <span class="macro-val">${eatenSugar} / ${planNutri.sugar_g}</span>
+          <span class="macro-ref ${overSugar ? 'warn-over' : ''}">${overSugar ? '▲ >20% over plan' : 'Planned target'}</span>
+        </div>
+        <div class="macro-tile">
+          <span class="macro-lbl">Sodium (mg)</span>
+          <span class="macro-val">${eatenSodium} / ${planNutri.sodium_mg}</span>
+          <span class="macro-ref ${overSodium ? 'warn-over' : ''}">${overSodium ? '▲ >20% over plan' : 'Planned cap'}</span>
+        </div>
+        <div class="macro-tile">
+          <span class="macro-lbl">Protein (g)</span>
+          <span class="macro-val">${eatenProtein} / ${planNutri.protein_g}</span>
+          <span class="macro-ref ${overProtein ? 'warn-over' : ''}">${overProtein ? '▲ >20% over plan' : 'Planned target'}</span>
+        </div>
+      </div>
+
+      <!-- 4 Nutrition Line Charts -->
+      <div class="nutrition-charts-grid">
+        <div class="nutri-box">
+          <div class="nutri-box-title">Carbohydrates (g)</div>
+          <svg class="trend-svg" id="svgNutriCarbs" viewBox="0 0 240 85"></svg>
+        </div>
+        <div class="nutri-box">
+          <div class="nutri-box-title">Sugar intake (g)</div>
+          <svg class="trend-svg" id="svgNutriSugar" viewBox="0 0 240 85"></svg>
+        </div>
+        <div class="nutri-box">
+          <div class="nutri-box-title">Sodium (mg)</div>
+          <svg class="trend-svg" id="svgNutriSodium" viewBox="0 0 240 85"></svg>
+        </div>
+        <div class="nutri-box">
+          <div class="nutri-box-title">Protein (g)</div>
+          <svg class="trend-svg" id="svgNutriProtein" viewBox="0 0 240 85"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2A.4 Guidance to Patient Box -->
+    <div class="guidance-card">
+      <div class="section-label">Guidance to Patient</div>
+      <textarea class="guidance-textarea" id="docGuideInput" placeholder="e.g. Fasting sugar is stabilizing well. Keep focusing on complex millets.">${p.guide || ''}</textarea>
+      <div class="guidance-meta-row">
+        <button class="btn-send-guidance" id="btnSendDocGuide" onclick="sendDoctorGuidance()">Send Guidance Note</button>
+        <div class="last-guidance-info">${guideTime ? `Last sent: ${guideTime}` : 'No notes sent yet'}</div>
+      </div>
+    </div>
+  `;
+
+  renderAlertsPanel();
+  renderAllCharts();
+}
+
+/* =================== CHART RENDERING =================== */
+function renderAllCharts(){
+  renderVitalsChart($('svgGlucose'), vTrendData, 'sugar', { refMin: 80, refMax: 130, unit: 'mg/dL' });
+  renderBPChart($('svgBP'), vTrendData);
+  renderVitalsChart($('svgHR'), vTrendData, 'hr', { unit: 'bpm' });
+
+  renderPlannedVsEatenChart($('svgNutriCarbs'), pTrendData, nTrendData, 'carbs_g', 'g');
+  renderPlannedVsEatenChart($('svgNutriSugar'), pTrendData, nTrendData, 'sugar_g', 'g');
+  renderPlannedVsEatenChart($('svgNutriSodium'), pTrendData, nTrendData, 'sodium_mg', 'mg');
+  renderPlannedVsEatenChart($('svgNutriProtein'), pTrendData, nTrendData, 'protein_g', 'g');
+}
+
+function renderVitalsChart(svgEl, data, field, options = {}){
+  if(!svgEl || !data || !data.length) return;
+  const w = 300, h = 95, padL = 26, padR = 10, padT = 10, padB = 20;
+
+  const validVals = data.map(d => d[field]).filter(v => v !== null && v !== undefined);
+  if(!validVals.length){
+    svgEl.innerHTML = `<text x="${w/2}" y="${h/2}" font-size="11" fill="#5B6B70" text-anchor="middle">No readings in range</text>`;
+    return;
+  }
+
+  let mn = Math.min(...validVals, options.refMin || 9999);
+  let mx = Math.max(...validVals, options.refMax || -9999);
+  mn = Math.floor(mn * 0.9);
+  mx = Math.ceil(mx * 1.1);
+  const rng = (mx - mn) || 1;
+
+  const getY = v => h - padB - ((v - mn) / rng) * (h - padT - padB);
+  const getX = i => padL + (i * (w - padL - padR)) / (data.length - 1 || 1);
+
+  let refBandHtml = '';
+  if(options.refMin !== undefined && options.refMax !== undefined){
+    const yTop = getY(options.refMax);
+    const yBot = getY(options.refMin);
+    refBandHtml = `
+      <rect x="${padL}" y="${yTop}" width="${w - padL - padR}" height="${Math.max(2, yBot - yTop)}" fill="rgba(15,118,110,0.07)"/>
+      <line x1="${padL}" y1="${yTop}" x2="${w - padR}" y2="${yTop}" stroke="#0F766E" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <line x1="${padL}" y1="${yBot}" x2="${w - padR}" y2="${yBot}" stroke="#0F766E" stroke-width="0.5" stroke-dasharray="2 2"/>
+    `;
+  }
+
+  let segments = [];
+  let currentSegment = [];
+  data.forEach((d, i) => {
+    if(d[field] !== null && d[field] !== undefined){
+      currentSegment.push({ x: getX(i), y: getY(d[field]), date: d.date, val: d[field] });
+    } else {
+      if(currentSegment.length){ segments.push(currentSegment); currentSegment = []; }
+    }
+  });
+  if(currentSegment.length) segments.push(currentSegment);
+
+  let pathsHtml = segments.map(seg => {
+    const dStr = seg.map((p, i) => (i ? 'L' : 'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+    return `<path d="${dStr}" fill="none" stroke="#0F766E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }).join('');
+
+  let dotsHtml = segments.flatMap(seg => seg.map(p => {
+    const isSpike = p.val >= 250;
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${isSpike ? '#B42318' : '#0F766E'}" stroke="#FFFFFF" stroke-width="1"><title>${p.date}: ${p.val} ${options.unit || ''}</title></circle>`;
+  })).join('');
+
+  svgEl.innerHTML = `
+    <line x1="${padL}" y1="${padT}" x2="${w - padR}" y2="${padT}" stroke="#E3E8EA" stroke-width="1"/>
+    <line x1="${padL}" y1="${(padT + h - padB)/2}" x2="${w - padR}" y2="${(padT + h - padB)/2}" stroke="#E3E8EA" stroke-width="1" stroke-dasharray="2 2"/>
+    <line x1="${padL}" y1="${h - padB}" x2="${w - padR}" y2="${h - padB}" stroke="#E3E8EA" stroke-width="1"/>
+    <text x="${padL - 3}" y="${padT + 4}" font-size="8.5" fill="#5B6B70" text-anchor="end">${mx}</text>
+    <text x="${padL - 3}" y="${h - padB}" font-size="8.5" fill="#5B6B70" text-anchor="end">${mn}</text>
+    <text x="${padL}" y="${h - 4}" font-size="8.5" fill="#5B6B70">${data[0]?.date?.substring(5) || ''}</text>
+    <text x="${w - padR}" y="${h - 4}" font-size="8.5" fill="#5B6B70" text-anchor="end">${data[data.length - 1]?.date?.substring(5) || ''}</text>
+    ${refBandHtml}
+    ${pathsHtml}
+    ${dotsHtml}
+  `;
+}
+
+function renderBPChart(svgEl, data){
+  if(!svgEl || !data || !data.length) return;
+  const w = 300, h = 95, padL = 26, padR = 10, padT = 10, padB = 20;
+
+  const validSys = data.map(d => d.sys).filter(v => v !== null && v !== undefined);
+  const validDia = data.map(d => d.dia).filter(v => v !== null && v !== undefined);
+  if(!validSys.length){
+    svgEl.innerHTML = `<text x="${w/2}" y="${h/2}" font-size="11" fill="#5B6B70" text-anchor="middle">No readings</text>`;
+    return;
+  }
+
+  const mn = Math.floor(Math.min(...validDia, 60) * 0.9);
+  const mx = Math.ceil(Math.max(...validSys, 160) * 1.05);
+  const rng = (mx - mn) || 1;
+
+  const getY = v => h - padB - ((v - mn) / rng) * (h - padT - padB);
+  const getX = i => padL + (i * (w - padL - padR)) / (data.length - 1 || 1);
+
+  function makeSegments(field, color, isDashed = false){
+    let segs = [], cur = [];
+    data.forEach((d, i) => {
+      if(d[field] !== null && d[field] !== undefined){
+        cur.push({ x: getX(i), y: getY(d[field]), date: d.date, val: d[field] });
+      } else {
+        if(cur.length){ segs.push(cur); cur = []; }
+      }
+    });
+    if(cur.length) segs.push(cur);
+
+    const paths = segs.map(seg => {
+      const dStr = seg.map((p, i) => (i ? 'L' : 'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+      return `<path d="${dStr}" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="${isDashed ? '3 3' : 'none'}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }).join('');
+
+    const dots = segs.flatMap(seg => seg.map(p => `
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="${color}" stroke="#FFFFFF" stroke-width="1"><title>${p.date}: ${p.val} mmHg (${field === 'sys' ? 'Systolic' : 'Diastolic'})</title></circle>
+    `)).join('');
+
+    return paths + dots;
+  }
+
+  svgEl.innerHTML = `
+    <line x1="${padL}" y1="${padT}" x2="${w - padR}" y2="${padT}" stroke="#E3E8EA" stroke-width="1"/>
+    <line x1="${padL}" y1="${h - padB}" x2="${w - padR}" y2="${h - padB}" stroke="#E3E8EA" stroke-width="1"/>
+    <text x="${padL - 3}" y="${padT + 4}" font-size="8.5" fill="#5B6B70" text-anchor="end">${mx}</text>
+    <text x="${padL - 3}" y="${h - padB}" font-size="8.5" fill="#5B6B70" text-anchor="end">${mn}</text>
+    <text x="${padL}" y="${h - 4}" font-size="8.5" fill="#5B6B70">${data[0]?.date?.substring(5) || ''}</text>
+    <text x="${w - padR}" y="${h - 4}" font-size="8.5" fill="#5B6B70" text-anchor="end">${data[data.length - 1]?.date?.substring(5) || ''}</text>
+    ${makeSegments('sys', '#0F766E')}
+    ${makeSegments('dia', '#5B6B70', true)}
+  `;
+}
+
+function renderPlannedVsEatenChart(svgEl, planData, eatenData, field, unit){
+  if(!svgEl) return;
+  const w = 240, h = 85, padL = 24, padR = 8, padT = 10, padB = 18;
+
+  const allDates = (planData && planData.length) ? planData.map(p => p.date) : (eatenData || []).map(e => e.date);
+  const count = allDates.length;
+  if(!count){
+    svgEl.innerHTML = `<text x="${w/2}" y="${h/2}" font-size="10" fill="#5B6B70" text-anchor="middle">No data</text>`;
+    return;
+  }
+
+  const dateIndexMap = {};
+  allDates.forEach((d, i) => { dateIndexMap[d] = i; });
+
+  const validPlans = (planData || [])
+    .filter(p => p && p.nutrition_summary && p.nutrition_summary[field] !== null && p.nutrition_summary[field] !== undefined)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  const validEaten = (eatenData || [])
+    .filter(e => e && e[field] !== null && e[field] !== undefined)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  const allNumbers = [
+    ...validPlans.map(p => p.nutrition_summary[field]),
+    ...validEaten.map(e => e[field])
+  ];
+  const mx = Math.max(10, ...allNumbers);
+  const mn = 0;
+  const rng = mx || 1;
+
+  const getY = v => h - padB - ((v - mn) / rng) * (h - padT - padB);
+  const getX = i => padL + (i * (w - padL - padR)) / (count - 1 || 1);
+
+  const pPoints = validPlans.map(p => ({
+    x: getX(dateIndexMap[p.date] !== undefined ? dateIndexMap[p.date] : 0),
+    y: getY(p.nutrition_summary[field]),
+    date: p.date,
+    val: p.nutrition_summary[field]
+  }));
+
+  const pPathD = pPoints.length > 1
+    ? pPoints.map((pt, i) => (i === 0 ? 'M' : 'L') + pt.x.toFixed(1) + ',' + pt.y.toFixed(1)).join(' ')
+    : '';
+
+  const plannedPathHtml = pPoints.length > 1
+    ? `<path d="${pPathD}" fill="none" stroke="#0F766E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`
+    : '';
+
+  const plannedDotsHtml = pPoints.map(pt => `
+    <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="3" fill="#0F766E" stroke="#FFFFFF" stroke-width="1" onclick="openDayDrilldown('${pt.date}')" style="cursor:pointer;"><title>${pt.date}: Planned ${pt.val} ${unit} (Click for day details)</title></circle>
+  `).join('');
+
+  const ePoints = validEaten.map(e => ({
+    x: getX(dateIndexMap[e.date] !== undefined ? dateIndexMap[e.date] : 0),
+    y: getY(e[field]),
+    date: e.date,
+    val: e[field]
+  }));
+
+  const ePathD = ePoints.length > 1
+    ? ePoints.map((pt, i) => (i === 0 ? 'M' : 'L') + pt.x.toFixed(1) + ',' + pt.y.toFixed(1)).join(' ')
+    : '';
+
+  const eatenPathHtml = ePoints.length > 1
+    ? `<path d="${ePathD}" fill="none" stroke="#5B6B70" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`
+    : '';
+
+  const eatenDotsHtml = ePoints.map(pt => `
+    <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="3" fill="#5B6B70" stroke="#FFFFFF" stroke-width="1" onclick="openDayDrilldown('${pt.date}')" style="cursor:pointer;"><title>${pt.date}: Eaten ${pt.val} ${unit} (Click for day details)</title></circle>
+  `).join('');
+
+  svgEl.innerHTML = `
+    <line x1="${padL}" y1="${padT}" x2="${w - padR}" y2="${padT}" stroke="#E3E8EA" stroke-width="1"/>
+    <line x1="${padL}" y1="${(padT + h - padB)/2}" x2="${w - padR}" y2="${(padT + h - padB)/2}" stroke="#E3E8EA" stroke-width="1" stroke-dasharray="2 2"/>
+    <line x1="${padL}" y1="${h - padB}" x2="${w - padR}" y2="${h - padB}" stroke="#E3E8EA" stroke-width="1"/>
+    <text x="${padL - 3}" y="${padT + 4}" font-size="8.5" fill="#5B6B70" text-anchor="end">${mx}</text>
+    <text x="${padL - 3}" y="${h - padB}" font-size="8.5" fill="#5B6B70" text-anchor="end">0</text>
+    <text x="${padL}" y="${h - 4}" font-size="8.5" fill="#5B6B70">${allDates[0]?.substring(5) || ''}</text>
+    <text x="${w - padR}" y="${h - 4}" font-size="8.5" fill="#5B6B70" text-anchor="end">${allDates[allDates.length - 1]?.substring(5) || ''}</text>
+    ${eatenPathHtml}
+    ${plannedPathHtml}
+    ${plannedDotsHtml}
+    ${eatenDotsHtml}
+  `;
+}
+
+/* =================== 2B.8 DRILL-DOWN PANEL LOGIC =================== */
+async function openDayDrilldown(dateStr){
+  const panel = $('drilldownPanel');
+  panel.classList.add('open');
+  $('drillDateTitle').textContent = `Day Details — ${dateStr}`;
+  $('drilldownBody').innerHTML = `<div style="text-align:center;padding:40px;"><div class="spinner-ring" style="margin:0 auto 8px;"></div>Loading telemetry for ${dateStr}...</div>`;
+
+  try {
+    const res = await fetch(`/api/patient/${selectedPatientId}/day/${dateStr}`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderDrilldownContent(data);
+  } catch(e){
+    $('drilldownBody').innerHTML = `<div style="color:var(--critical);font-size:13px;padding:20px;">Failed to load details: ${e.message}</div>`;
+  }
+}
+
+function closeDrilldown(){
+  $('drilldownPanel').classList.remove('open');
+}
+
+function renderDrilldownContent(data){
+  const plan = data.plan || {};
+  const meals = data.meals || [];
+  const vitals = data.vitals || null;
+  const slots = plan.meal_plan || [];
+
+  let totalEatenKcal = 0, totalEatenCarbs = 0, totalEatenSugar = 0, totalEatenSodium = 0, totalEatenProtein = 0;
+  meals.forEach(m => {
+    totalEatenKcal += parseInt(m.kcal || 0);
+    totalEatenCarbs += parseInt(m.carbs_g || 0);
+    totalEatenSugar += parseInt(m.sugar_g || 0);
+    totalEatenSodium += parseInt(m.sodium_mg || 0);
+    totalEatenProtein += parseInt(m.protein_g || 0);
+  });
+
+  $('drilldownBody').innerHTML = `
+    <!-- Day Telemetry Summary -->
+    ${vitals ? `
+      <div class="drill-section">
+        <div class="drill-section-title">Morning Vitals Logged</div>
+        <div style="display:flex;gap:12px;font-size:12.5px;color:var(--text-primary);">
+          <div>Sugar: <b class="num">${vitals.sugar}</b> mg/dL</div>
+          <div>BP: <b class="num">${vitals.sys}/${vitals.dia}</b> mmHg</div>
+          <div>HR: <b class="num">${vitals.hr}</b> bpm</div>
+        </div>
+      </div>
+    ` : ''}
+
+    <!-- Planned Menu (8 Slots on Top) -->
+    <div class="drill-section">
+      <div class="drill-section-title">Planned Menu & AI Targets</div>
+      ${plan.brief ? `<div style="font-size:12px;color:var(--text-primary);margin-bottom:8px;line-height:1.4;">${plan.brief}</div>` : ''}
+      ${plan.activity ? `<div style="font-size:11.5px;color:var(--accent);margin-bottom:10px;font-weight:500;">Activity: ${plan.activity}</div>` : ''}
+      
+      <div style="border-top:1px solid var(--border);padding-top:8px;">
+        ${slots.length ? slots.map(s => `
+          <div class="drill-plan-slot">
+            <span class="drill-slot-name">${s.slot}</span>
+            <span class="drill-slot-dish">${s.suggestion || s.dish || '—'}</span>
+            <span class="drill-slot-kcal">${s.kcal ? s.kcal + ' kcal' : ''}</span>
+          </div>
+        `).join('') : '<div style="font-size:12px;color:var(--text-secondary);">No plan generated for this date.</div>'}
+      </div>
+    </div>
+
+    <!-- Eaten Meals Table -->
+    <div class="drill-section">
+      <div class="drill-section-title">Confirmed Eaten Meals (${meals.length})</div>
+      ${meals.length ? `
+        <div style="overflow-x:auto;">
+          <table class="c-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Slot</th>
+                <th>Dish</th>
+                <th class="r">kcal</th>
+                <th class="r">Carbs<br><span style="font-size:9.5px;color:var(--text-secondary);font-weight:normal;">(g)</span></th>
+                <th class="r">Sugar<br><span style="font-size:9.5px;color:var(--text-secondary);font-weight:normal;">(g)</span></th>
+                <th class="r">Sodium<br><span style="font-size:9.5px;color:var(--text-secondary);font-weight:normal;">(mg)</span></th>
+                <th class="r">Protein<br><span style="font-size:9.5px;color:var(--text-secondary);font-weight:normal;">(g)</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${meals.map(m => `
+                <tr>
+                  <td class="num" style="color:var(--text-secondary);font-size:11px;white-space:nowrap;">${formatLocalTimeOnly(m.ts)}</td>
+                  <td style="text-transform:capitalize;font-weight:500;white-space:nowrap;">${m.slot}</td>
+                  <td style="font-weight:600;min-width:100px;">${m.dish}</td>
+                  <td class="r num">${m.kcal || 0}</td>
+                  <td class="r num">${m.carbs_g || 0}</td>
+                  <td class="r num">${m.sugar_g || 0}</td>
+                  <td class="r num">${m.sodium_mg || 0}</td>
+                  <td class="r num">${m.protein_g || 0}</td>
+                </tr>
+              `).join('')}
+              <tr style="background:var(--bg);font-weight:700;">
+                <td colspan="3">Daily Total</td>
+                <td class="r num">${totalEatenKcal}</td>
+                <td class="r num">${totalEatenCarbs}</td>
+                <td class="r num">${totalEatenSugar}</td>
+                <td class="r num">${totalEatenSodium}</td>
+                <td class="r num">${totalEatenProtein}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ` : '<div style="font-size:12px;color:var(--text-secondary);">No meals confirmed for this date.</div>'}
+    </div>
+  `;
+}
+
+/* =================== GUIDANCE =================== */
+async function sendDoctorGuidance(){
+  if(!currentPatientDoc || !currentPatientDoc.profile) return;
+  const guide = $('docGuideInput').value.trim();
+  const btn = $('btnSendDocGuide');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ patient_id: selectedPatientId, guide })
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadPatientData(selectedPatientId);
+    toast('Guidance note sent to patient app ✓');
+  } catch(err){
+    toast('Failed to send: ' + err.message);
+  } finally {
+    btn.textContent = 'Send Guidance Note';
+    btn.disabled = false;
+  }
+}
+
+/* =================== ENROLLMENT =================== */
+function openEnrollModal(){
+  $('enrollModal').classList.add('visible');
+  $('enrollFormBox').style.display = 'block';
+  $('enrollDoneBox').style.display = 'none';
+
+  $('eName').value = '';
+  $('eDob').value = '';
+  $('eGender').value = '';
+  $('eHeight').value = '';
+  $('eWeight').value = '';
+  $('eState').value = '';
+  $('ePhone').value = '+91 ';
+
+  enrollExcl = new Set();
+  enrollAllergens = new Set();
+  renderEnrollChips();
+
+  ['eName', 'eDob', 'eGender', 'eHeight', 'eWeight', 'eState', 'ePhone'].forEach(id => {
+    const err = $(`err-${id}`);
+    if(err) err.style.display = 'none';
+    const input = $(id);
+    if(input) input.style.borderColor = '';
+  });
+}
+
+function closeEnrollModal(){
+  $('enrollModal').classList.remove('visible');
+  $('eName').value = '';
+  $('eDob').value = '';
+  $('eGender').value = '';
+  $('eHeight').value = '';
+  $('eWeight').value = '';
+  $('eState').value = '';
+  $('ePhone').value = '+91 ';
+  enrollExcl = new Set();
+  enrollAllergens = new Set();
+  ['eName', 'eDob', 'eGender', 'eHeight', 'eWeight', 'eState', 'ePhone'].forEach(id => {
+    const err = $(`err-${id}`);
+    if(err) err.style.display = 'none';
+    const input = $(id);
+    if(input) input.style.borderColor = '';
+  });
+}
+
+function renderEnrollChips(){
+  $('enrollExclChips').innerHTML = EXCLUSION_OPTIONS.map(e => `
+    <button type="button" class="c-chip ${enrollExcl.has(e) ? 'active' : ''}" onclick="toggleEnrollExcl('${e}')">${e}</button>
+  `).join('');
+  $('enrollAllergenChips').innerHTML = ALLERGEN_OPTIONS.map(a => `
+    <button type="button" class="c-chip ${enrollAllergens.has(a) ? 'active' : ''}" onclick="toggleEnrollAllergen('${a}')">${a}</button>
+  `).join('');
+}
+
+function toggleEnrollExcl(e){
+  if(e === "All meat"){
+    if(enrollExcl.has("All meat")){
+      enrollExcl.delete("All meat");
+      MEATS.forEach(m => enrollExcl.delete(m));
+    } else {
+      enrollExcl.add("All meat");
+      MEATS.forEach(m => enrollExcl.add(m));
+    }
+  } else {
+    if(enrollExcl.has(e)){
+      enrollExcl.delete(e);
+      if(MEATS.includes(e)) enrollExcl.delete("All meat");
+    } else {
+      enrollExcl.add(e);
+      if(MEATS.every(m => enrollExcl.has(m))) enrollExcl.add("All meat");
+    }
+  }
+  renderEnrollChips();
+}
+
+function toggleEnrollAllergen(a){
+  enrollAllergens.has(a) ? enrollAllergens.delete(a) : enrollAllergens.add(a);
+  renderEnrollChips();
+}
+
+async function submitEnrollment(){
+  let hasError = false;
+  ['eName', 'eDob', 'eGender', 'eHeight', 'eWeight', 'eState', 'ePhone'].forEach(id => {
+    const err = $(`err-${id}`);
+    if(err) err.style.display = 'none';
+    const input = $(id);
+    if(input) input.style.borderColor = '';
+  });
+
+  const name = $('eName').value.trim();
+  const dob = $('eDob').value.trim();
+  const gender = $('eGender').value;
+  const height_cm = parseFloat($('eHeight').value);
+  const weight_kg = parseFloat($('eWeight').value);
+  const state = $('eState').value;
+  const phone = $('ePhone').value.trim();
+
+  if(!name || name.toLowerCase() === 'undefined' || name.toLowerCase() === 'null'){
+    $('err-eName').style.display = 'block';
+    $('eName').style.borderColor = '#B42318';
+    hasError = true;
+  }
+  if(!dob){
+    $('err-eDob').style.display = 'block';
+    $('eDob').style.borderColor = '#B42318';
+    hasError = true;
+  }
+  if(!gender){
+    $('err-eGender').style.display = 'block';
+    $('eGender').style.borderColor = '#B42318';
+    hasError = true;
+  }
+  if(isNaN(height_cm) || height_cm <= 0){
+    $('err-eHeight').style.display = 'block';
+    $('eHeight').style.borderColor = '#B42318';
+    hasError = true;
+  }
+  if(isNaN(weight_kg) || weight_kg <= 0){
+    $('err-eWeight').style.display = 'block';
+    $('eWeight').style.borderColor = '#B42318';
+    hasError = true;
+  }
+  if(!state){
+    $('err-eState').style.display = 'block';
+    $('eState').style.borderColor = '#B42318';
+    hasError = true;
+  }
+  const digits = phone.replace(/\D/g, '');
+  if(!phone.startsWith('+91') || digits.length < 10){
+    $('err-ePhone').style.display = 'block';
+    $('ePhone').style.borderColor = '#B42318';
+    hasError = true;
+  }
+
+  if(hasError) return;
+
+  const btn = $('btnSubmitEnroll');
+  btn.textContent = 'Creating Record...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/enroll', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name, dob, gender, height_cm, weight_kg,
+        food_exclusions: Array.from(enrollExcl),
+        allergens: Array.from(enrollAllergens),
+        state,
+        phone
+      })
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    createdPatientId = data.patient_id;
+
+    $('donePatientName').textContent = name;
+    $('doneLinkText').textContent = `${window.location.origin}${data.secure_link || ('/patient?token=' + data.token)}`;
+    $('enrollFormBox').style.display = 'none';
+    $('enrollDoneBox').style.display = 'block';
+
+    await fetchPatients();
+    selectedPatientId = createdPatientId;
+    renderDocPatientList();
+    loadPatientData(createdPatientId);
+  } catch(err){
+    toast('Enrollment failed: ' + err.message);
+  } finally {
+    btn.textContent = 'Generate Invitation';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

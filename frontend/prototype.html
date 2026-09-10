@@ -1,0 +1,760 @@
+<!-- Initial design prototype from the planning phase. The live application UIs are backend/static/doctor.html and backend/static/patient.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VitalSync</title>
+<style>
+  :root{
+    --dark:#0A3A40; --primary:#028090; --sea:#00A896; --mint:#02C39A;
+    --tint:#E8F5F4; --ink:#1F2A2C; --muted:#5E7477; --bg:#F4F8F8;
+    --danger:#C0392B; --warn:#C9A227; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;}
+  body{background:var(--bg); color:var(--ink); min-height:100vh;}
+  button{cursor:pointer; border:none; font-family:inherit;}
+  input,select,textarea{font-family:inherit; font-size:14px;}
+
+  /* ===== Top bar ===== */
+  .topbar{background:var(--dark); color:#fff; display:flex; align-items:center; gap:16px; padding:10px 20px; position:sticky; top:0; z-index:50;}
+  .topbar .logo{display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px;}
+  .logo-dot{width:30px;height:30px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .switcher{margin-left:auto; display:flex; background:rgba(255,255,255,.12); border-radius:999px; padding:4px;}
+  .switcher button{padding:7px 18px; border-radius:999px; background:transparent; color:#CFE8E6; font-size:13.5px; font-weight:600;}
+  .switcher button.active{background:var(--mint); color:var(--dark);}
+  .reset-btn{background:transparent; color:#9FBFBC; font-size:12px; text-decoration:underline;}
+  .demo-tag{font-size:11px; background:rgba(255,255,255,.15); padding:3px 10px; border-radius:999px; color:#CFE8E6;}
+
+  /* ===== Doctor portal ===== */
+  .portal{display:none; max-width:1200px; margin:0 auto; padding:22px; gap:20px;}
+  .portal.visible{display:flex;}
+  .sidebar{width:280px; flex-shrink:0;}
+  .side-card{background:var(--card); border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(10,58,64,.08); margin-bottom:14px;}
+  .clinic-name{font-weight:700; color:var(--dark); font-size:15px;}
+  .clinic-sub{font-size:12px; color:var(--muted); margin-top:2px;}
+  .enroll-btn{width:100%; background:var(--primary); color:#fff; padding:11px; border-radius:10px; font-weight:600; font-size:14px; margin-top:12px;}
+  .enroll-btn:hover{background:#026873;}
+  .plist{list-style:none;}
+  .plist li{padding:10px 10px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:10px; margin-bottom:4px;}
+  .plist li:hover{background:var(--tint);}
+  .plist li.sel{background:var(--tint); outline:2px solid var(--sea);}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .pname{font-size:13.5px; font-weight:600; color:var(--ink);}
+  .pmeta{font-size:11px; color:var(--muted);}
+  .pending-pill{margin-left:auto; font-size:10px; background:#FFF3D6; color:#8A6D1A; padding:2px 8px; border-radius:999px;}
+  .main{flex:1; min-width:0;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+  .card{background:var(--card); border-radius:14px; padding:16px; box-shadow:0 2px 8px rgba(10,58,64,.08);}
+  .card h3{font-size:13px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .patient-head{display:flex; align-items:center; gap:14px; margin-bottom:16px;}
+  .patient-head .avatar{width:52px;height:52px;font-size:19px;}
+  .patient-head h2{font-size:21px; color:var(--dark);}
+  .patient-head .pmeta{font-size:13px;}
+  .flag{margin-left:auto; font-size:12.5px; font-weight:600; padding:6px 14px; border-radius:999px;}
+  .flag.ok{background:#E4F7EF; color:#0B7A4B;}
+  .flag.warn{background:#FDEEEC; color:var(--danger);}
+  .bigval{font-size:26px; font-weight:700; color:var(--dark);}
+  .bigval small{font-size:12px; color:var(--muted); font-weight:400;}
+  .trend-label{font-size:12px; color:var(--muted); margin-top:2px;}
+  svg.spark{width:100%; height:52px; margin-top:6px;}
+  .meal-strip{display:flex; gap:8px; flex-wrap:wrap;}
+  .meal-chip{width:78px; text-align:center; background:var(--tint); border-radius:12px; padding:8px 4px;}
+  .meal-chip .em{font-size:24px;}
+  .meal-chip .lbl{font-size:9.5px; color:var(--muted); margin-top:3px; line-height:1.25;}
+  .meal-chip .dish{font-size:9.5px; color:var(--primary); font-weight:600; margin-top:2px; min-height:12px;}
+  .meal-chip.missed{background:#F3F4F4; opacity:.55;}
+  .meal-chip.missed .em{filter:grayscale(1);}
+  .guide-box textarea{width:100%; border:1.5px solid #D5E3E2; border-radius:10px; padding:10px; min-height:64px; resize:vertical;}
+  .send-guide{background:var(--sea); color:#fff; padding:9px 18px; border-radius:9px; font-weight:600; margin-top:8px; font-size:13.5px;}
+  .guide-sent{font-size:12px; color:var(--sea); margin-top:6px; display:none;}
+  .stat-row{display:flex; gap:14px; margin-bottom:14px;}
+  .stat-tile{flex:1; background:var(--card); border-radius:14px; padding:14px 16px; box-shadow:0 2px 8px rgba(10,58,64,.08);}
+  .stat-tile .k{font-size:24px; font-weight:700; color:var(--primary);}
+  .stat-tile .l{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .empty-main{padding:60px 20px; text-align:center; color:var(--muted);}
+
+  /* ===== Modal ===== */
+  .overlay{position:fixed; inset:0; background:rgba(10,58,64,.45); display:none; align-items:center; justify-content:center; z-index:100;}
+  .overlay.visible{display:flex;}
+  .modal{background:#fff; border-radius:16px; padding:24px; width:min(480px, 92vw); max-height:88vh; overflow:auto;}
+  .modal h2{color:var(--dark); font-size:19px; margin-bottom:4px;}
+  .modal .sub{font-size:13px; color:var(--muted); margin-bottom:16px;}
+  .frow{margin-bottom:12px;}
+  .frow label{display:block; font-size:12.5px; font-weight:600; color:var(--dark); margin-bottom:5px;}
+  .frow input,.frow select{width:100%; padding:10px; border:1.5px solid #D5E3E2; border-radius:9px;}
+  .frow2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .primary-btn{width:100%; background:var(--primary); color:#fff; padding:12px; border-radius:10px; font-weight:700; font-size:15px;}
+  .primary-btn:hover{background:#026873;}
+  .ghost-btn{width:100%; background:transparent; color:var(--muted); padding:10px; font-size:13px; margin-top:6px;}
+  .linkbox{background:var(--tint); border-radius:12px; padding:14px; margin:14px 0; font-size:13.5px;}
+  .linkbox .lk{font-family:Consolas,monospace; color:var(--primary); font-weight:700; word-break:break-all;}
+  .otp-big{font-size:30px; font-weight:800; letter-spacing:8px; color:var(--dark); text-align:center; margin:6px 0;}
+
+  /* ===== Phone ===== */
+  .phone-wrap{display:none; justify-content:center; padding:26px 10px 40px;}
+  .phone-wrap.visible{display:flex;}
+  .phone{width:392px; height:800px; background:#000; border-radius:44px; padding:10px; box-shadow:0 18px 50px rgba(10,58,64,.35); position:relative;}
+  .notch{position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#000; border-radius:0 0 16px 16px; z-index:5;}
+  .screen{width:100%; height:100%; background:var(--bg); border-radius:36px; overflow:hidden; display:flex; flex-direction:column; position:relative;}
+  .app-scroll{flex:1; overflow-y:auto; overflow-x:hidden;}
+  .status-strip{height:34px; flex-shrink:0; background:var(--dark);}
+  .app-screen{display:none; flex-direction:column; height:100%;}
+  .app-screen.visible{display:flex;}
+
+  .hero{background:var(--dark); color:#fff; padding:46px 24px 30px; text-align:center;}
+  .hero .big-emoji{font-size:44px;}
+  .hero h1{font-size:21px; margin-top:12px;}
+  .hero p{font-size:13px; color:#CFE8E6; margin-top:8px; line-height:1.5;}
+  .pad{padding:20px;}
+  .app-card{background:#fff; border-radius:16px; padding:16px; box-shadow:0 2px 8px rgba(10,58,64,.07); margin-bottom:14px;}
+  .app-card h4{font-size:13px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px;}
+  .otp-inputs{display:flex; gap:10px; justify-content:center; margin:18px 0;}
+  .otp-inputs input{width:52px; height:58px; text-align:center; font-size:24px; font-weight:700; border:2px solid #D5E3E2; border-radius:12px; color:var(--dark);}
+  .otp-inputs input:focus{border-color:var(--sea); outline:none;}
+  .hint{font-size:12px; color:var(--muted); text-align:center;}
+  .hint b{color:var(--primary);}
+  .verify-row{display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid #EDF3F2; font-size:14px;}
+  .verify-row .vl{color:var(--muted); font-size:12.5px;}
+  .verify-row .vv{font-weight:600; color:var(--dark);}
+  .verify-row input{width:110px; padding:6px 8px; border:1.5px solid #D5E3E2; border-radius:8px; text-align:right;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{padding:8px 15px; border-radius:999px; background:#fff; border:1.5px solid #D5E3E2; font-size:13px; color:var(--ink);}
+  .chip.on{background:var(--primary); border-color:var(--primary); color:#fff; font-weight:600;}
+  .appbar{background:var(--dark); color:#fff; padding:14px 18px; display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .appbar .t{font-weight:700; font-size:15.5px;}
+  .appbar .s{font-size:11px; color:#9FBFBC;}
+  .back{background:transparent; color:#CFE8E6; font-size:18px; padding:2px 6px;}
+  .guide-banner{background:#FFF8E7; border-left:none; border-radius:12px; padding:12px 14px; font-size:12.5px; color:#6B5A1E; margin-bottom:14px; display:none;}
+  .guide-banner b{display:block; color:#8A6D1A; margin-bottom:2px; font-size:11.5px;}
+  .targets{display:flex; gap:10px; margin-bottom:14px;}
+  .target{flex:1; background:#fff; border-radius:14px; padding:12px 8px; text-align:center; box-shadow:0 2px 8px rgba(10,58,64,.07);}
+  .target .tv{font-size:16.5px; font-weight:700; color:var(--primary);}
+  .target .tl{font-size:10px; color:var(--muted); margin-top:2px;}
+  .vitals-graph-tabs{display:flex; gap:6px; margin-bottom:8px;}
+  .vitals-graph-tabs button{flex:1; padding:6px; border-radius:8px; background:#EDF3F2; font-size:11.5px; color:var(--muted); font-weight:600;}
+  .vitals-graph-tabs button.on{background:var(--primary); color:#fff;}
+  .slots{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;}
+  .slot{background:#fff; border:1.5px dashed #BFD6D4; border-radius:12px; padding:8px 2px; text-align:center; cursor:pointer;}
+  .slot .em{font-size:21px;}
+  .slot .lbl{font-size:8.6px; color:var(--muted); margin-top:3px; line-height:1.2;}
+  .slot.done{border-style:solid; border-color:var(--mint); background:#F0FBF7;}
+  .slot.done .lbl{color:var(--sea); font-weight:600;}
+  .recipes{display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;}
+  .recipe{min-width:118px; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(10,58,64,.07); cursor:pointer; flex-shrink:0;}
+  .recipe .rimg{height:64px; display:flex; align-items:center; justify-content:center; font-size:30px; background:var(--tint);}
+  .recipe .rname{font-size:11.5px; font-weight:600; color:var(--dark); padding:7px 8px 2px; line-height:1.25;}
+  .recipe .rcal{font-size:10px; color:var(--muted); padding:0 8px 8px;}
+  .fab{position:absolute; bottom:22px; right:20px; width:58px; height:58px; border-radius:50%; background:var(--primary); color:#fff; font-size:27px; box-shadow:0 6px 16px rgba(2,128,144,.45); z-index:10;}
+  .fab:hover{background:#026873;}
+  .countdown-wrap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--dark); color:#fff; text-align:center; padding:24px;}
+  .cd-circle{width:180px; height:180px; border-radius:50%; border:6px solid var(--mint); display:flex; flex-direction:column; align-items:center; justify-content:center; margin:22px 0;}
+  .cd-num{font-size:52px; font-weight:800;}
+  .cd-lbl{font-size:12px; color:#9FBFBC;}
+  .cd-msg{font-size:14px; color:#CFE8E6; line-height:1.6; max-width:260px;}
+  .skip-btn{margin-top:20px; background:rgba(255,255,255,.14); color:#CFE8E6; padding:9px 22px; border-radius:999px; font-size:12.5px;}
+  .entry-field{margin-bottom:14px;}
+  .entry-field label{display:block; font-size:12.5px; font-weight:600; color:var(--dark); margin-bottom:6px;}
+  .entry-field .unit-input{display:flex; align-items:center; gap:8px;}
+  .entry-field input{flex:1; padding:12px; border:1.5px solid #D5E3E2; border-radius:10px; font-size:16px;}
+  .entry-field .unit{font-size:12px; color:var(--muted); width:70px;}
+  .range-warn{font-size:11px; color:var(--danger); margin-top:4px; display:none;}
+  .brief-card{background:#fff; border-radius:16px; padding:18px; box-shadow:0 2px 8px rgba(10,58,64,.07);}
+  .brief-card .bt{font-size:15px; font-weight:700; color:var(--dark); margin-bottom:8px;}
+  .brief-card p{font-size:13px; color:var(--ink); line-height:1.6; margin-bottom:8px;}
+  .pill-row{display:flex; gap:8px; margin:10px 0; flex-wrap:wrap;}
+  .vpill{font-size:11.5px; padding:5px 12px; border-radius:999px; background:var(--tint); color:var(--primary); font-weight:600;}
+  .vpill.hi{background:#FDEEEC; color:var(--danger);}
+  .photo-preview{height:150px; border-radius:14px; background:var(--tint); display:flex; align-items:center; justify-content:center; font-size:56px; margin-bottom:14px; overflow:hidden;}
+  .photo-preview img{width:100%; height:100%; object-fit:cover;}
+  .sugg{display:flex; align-items:center; gap:12px; background:#fff; border:1.5px solid #D5E3E2; border-radius:12px; padding:11px 13px; margin-bottom:9px; cursor:pointer; font-size:13.5px;}
+  .sugg:hover{border-color:var(--sea);}
+  .sugg .sem{font-size:23px;}
+  .sugg .sn{font-weight:600; color:var(--dark);}
+  .sugg .sc{font-size:11px; color:var(--muted);}
+  .sugg .ai{margin-left:auto; font-size:9.5px; background:var(--tint); color:var(--primary); padding:3px 8px; border-radius:999px; font-weight:700;}
+  .sample-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+  .sample{font-size:26px; background:#fff; border:1.5px solid #D5E3E2; border-radius:12px; width:52px; height:52px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .sample:hover{border-color:var(--sea);}
+  .toast{position:absolute; bottom:26px; left:50%; transform:translateX(-50%); background:var(--dark); color:#fff; font-size:12.5px; padding:10px 18px; border-radius:999px; opacity:0; transition:opacity .3s; z-index:20; white-space:nowrap; pointer-events:none;}
+  .toast.show{opacity:1;}
+  .divider-lbl{font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin:16px 0 8px;}
+  .succ-icon{width:74px;height:74px;border-radius:50%;background:var(--mint);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;}
+  @media (max-width:900px){ .portal.visible{flex-direction:column;} .sidebar{width:100%;} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-dot">💚</div>VitalSync <span class="demo-tag">DEMO PROTOTYPE</span></div>
+  <div class="switcher">
+    <button id="btnPortal" class="active" onclick="switchMode('portal')">🖥️ Doctor's Portal</button>
+    <button id="btnPhone" onclick="switchMode('phone')">📱 Patient App</button>
+  </div>
+  <button class="reset-btn" onclick="location.reload()">Reset demo</button>
+</div>
+
+<!-- ================= DOCTOR PORTAL ================= -->
+<div class="portal visible" id="portal">
+  <div class="sidebar">
+    <div class="side-card">
+      <div class="clinic-name">🏥 Sunrise Diabetes Clinic</div>
+      <div class="clinic-sub">Dr. Anita Rao · Diabetologist</div>
+      <button class="enroll-btn" onclick="openEnroll()">＋ Enroll new patient</button>
+    </div>
+    <div class="side-card">
+      <h3 style="font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Patients</h3>
+      <ul class="plist" id="plist"></ul>
+    </div>
+  </div>
+  <div class="main" id="portalMain"></div>
+</div>
+
+<!-- ================= PHONE ================= -->
+<div class="phone-wrap" id="phoneWrap">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status-strip"></div>
+
+      <!-- 1. Secure link landing -->
+      <div class="app-screen visible" id="scr-link">
+        <div class="app-scroll">
+          <div class="hero">
+            <div class="big-emoji">🔗</div>
+            <h1>You've been invited</h1>
+            <p id="inviteText">Dr. Anita Rao (Sunrise Diabetes Clinic) has prescribed the VitalSync for you.</p>
+          </div>
+          <div class="pad">
+            <div class="app-card">
+              <div class="hint" style="text-align:left;font-size:12.5px;line-height:1.6;">This secured link is unique to you and expires in 72 hours. Your data will be visible only to you and your care team at the clinic.</div>
+            </div>
+            <button class="primary-btn" onclick="go('scr-otp')">Download & open the app</button>
+            <div class="hint" style="margin-top:10px;">Simulated: Google Play install happens here</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. OTP -->
+      <div class="app-screen" id="scr-otp">
+        <div class="app-scroll">
+          <div class="hero">
+            <div class="big-emoji">🔐</div>
+            <h1>Verify it's you</h1>
+            <p>Enter the one-time password sent to your phone by SMS.</p>
+          </div>
+          <div class="pad">
+            <div class="otp-inputs">
+              <input maxlength="1" inputmode="numeric" oninput="otpNext(this,0)">
+              <input maxlength="1" inputmode="numeric" oninput="otpNext(this,1)">
+              <input maxlength="1" inputmode="numeric" oninput="otpNext(this,2)">
+              <input maxlength="1" inputmode="numeric" oninput="otpNext(this,3)">
+            </div>
+            <div class="hint">For this demo the OTP is <b id="otpHint">4 8 2 1</b></div>
+            <div class="hint" id="otpErr" style="color:var(--danger);display:none;margin-top:6px;">That code doesn't match — try again.</div>
+            <div style="height:16px;"></div>
+            <button class="primary-btn" onclick="checkOtp()">Verify</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Verify details -->
+      <div class="app-screen" id="scr-verify">
+        <div class="app-scroll">
+          <div class="hero" style="padding-top:36px;">
+            <div class="big-emoji">✅</div>
+            <h1>Confirm your details</h1>
+            <p>Your doctor entered these. Correct anything that's wrong.</p>
+          </div>
+          <div class="pad">
+            <div class="app-card" id="verifyRows"></div>
+            <button class="primary-btn" onclick="go('scr-setup')">Looks right — continue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Preferences -->
+      <div class="app-screen" id="scr-setup">
+        <div class="app-scroll">
+          <div class="hero" style="padding-top:36px;">
+            <div class="big-emoji">🥗</div>
+            <h1>Your food profile</h1>
+            <p>One step — recipes and targets are tailored to this.</p>
+          </div>
+          <div class="pad">
+            <div class="app-card">
+              <h4>Food preference</h4>
+              <div class="chips" id="prefChips"></div>
+            </div>
+            <div class="app-card">
+              <h4>Allergens (tap all that apply)</h4>
+              <div class="chips" id="allergenChips"></div>
+            </div>
+            <button class="primary-btn" onclick="finishSetup()">Finish setup</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Home dashboard -->
+      <div class="app-screen" id="scr-home">
+        <div class="appbar">
+          <div><div class="t" id="homeName">Hi</div><div class="s">Sunrise Diabetes Clinic · connected</div></div>
+        </div>
+        <div class="app-scroll">
+          <div class="pad" style="padding-bottom:96px;">
+            <div class="guide-banner" id="guideBanner"><b>📩 From Dr. Anita Rao</b><span id="guideText"></span></div>
+            <div class="targets">
+              <div class="target"><div class="tv" id="tCal">1,600</div><div class="tl">kcal target</div></div>
+              <div class="target"><div class="tv" id="tSod">2.0 g</div><div class="tl">sodium cap</div></div>
+              <div class="target"><div class="tv" id="tSteps">6,000</div><div class="tl">steps</div></div>
+              <div class="target"><div class="tv">🧘 15m</div><div class="tl">easy yoga</div></div>
+            </div>
+            <div class="app-card">
+              <h4>My readings — last 5</h4>
+              <div class="vitals-graph-tabs">
+                <button class="on" onclick="homeGraph('sugar',this)">Sugar</button>
+                <button onclick="homeGraph('bp',this)">BP</button>
+                <button onclick="homeGraph('hr',this)">Heart rate</button>
+              </div>
+              <svg class="spark" id="homeSpark" viewBox="0 0 300 52" preserveAspectRatio="none"></svg>
+              <div class="hint" id="homeSparkHint" style="text-align:left;"></div>
+            </div>
+            <div class="divider-lbl">Today's meals <span style="font-weight:400;text-transform:none;" id="mealCount"></span></div>
+            <div class="slots" id="slotGrid"></div>
+            <div class="divider-lbl">Recipes for you</div>
+            <div class="recipes" id="recipeRow"></div>
+          </div>
+        </div>
+        <button class="fab" onclick="startCountdown()">＋</button>
+        <div class="toast" id="toast"></div>
+      </div>
+
+      <!-- 6. Countdown -->
+      <div class="app-screen" id="scr-count">
+        <div class="countdown-wrap">
+          <div class="big-emoji" style="font-size:38px;">🧘</div>
+          <div class="cd-msg" style="margin-top:12px;">Sit back, relax, and breathe slowly. Measure after the countdown for an accurate resting reading.</div>
+          <div class="cd-circle"><div class="cd-num" id="cdNum">60</div><div class="cd-lbl">seconds</div></div>
+          <button class="skip-btn" onclick="endCountdown()">Skip (demo)</button>
+        </div>
+      </div>
+
+      <!-- 7. Entry form -->
+      <div class="app-screen" id="scr-entry">
+        <div class="appbar"><button class="back" onclick="go('scr-home')">‹</button><div><div class="t">Morning readings</div><div class="s">fasting · seated · relaxed</div></div></div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="app-card">
+              <div class="entry-field">
+                <label>Fasting blood sugar</label>
+                <div class="unit-input"><input id="inSugar" type="number" placeholder="e.g. 120"><span class="unit">mg/dL</span></div>
+                <div class="range-warn" id="wSugar">Unusually high — please re-check. Your care team will be notified.</div>
+              </div>
+              <div class="entry-field">
+                <label>Blood pressure</label>
+                <div class="unit-input">
+                  <input id="inSys" type="number" placeholder="Systolic"><span style="color:var(--muted)">/</span>
+                  <input id="inDia" type="number" placeholder="Diastolic"><span class="unit">mmHg</span>
+                </div>
+              </div>
+              <div class="entry-field">
+                <label>Heart rate</label>
+                <div class="unit-input"><input id="inHr" type="number" placeholder="e.g. 74"><span class="unit">bpm</span></div>
+              </div>
+            </div>
+            <button class="primary-btn" onclick="saveReading()">Save readings</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Brief -->
+      <div class="app-screen" id="scr-brief">
+        <div class="appbar"><div><div class="t">Your daily brief</div><div class="s">generated from today's readings</div></div></div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="succ-icon">✓</div>
+            <div class="brief-card">
+              <div class="bt">Today at a glance</div>
+              <div class="pill-row" id="briefPills"></div>
+              <p id="briefText"></p>
+              <p style="font-size:11px;color:var(--muted);">ℹ️ Informational only — not medical advice. Your care team at Sunrise Diabetes Clinic can see these readings.</p>
+            </div>
+            <div style="height:14px;"></div>
+            <button class="primary-btn" onclick="go('scr-home'); refreshHome();">Back to dashboard</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. Meal capture -->
+      <div class="app-screen" id="scr-meal">
+        <div class="appbar"><button class="back" onclick="go('scr-home')">‹</button><div><div class="t" id="mealTitle">Log meal</div><div class="s">photo first, then confirm the dish</div></div></div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="photo-preview" id="photoPreview">📷</div>
+            <div id="photoStep">
+              <label class="primary-btn" style="display:block;text-align:center;">
+                Take / upload photo
+                <input type="file" accept="image/*" style="display:none" onchange="photoPicked(event)">
+              </label>
+              <div class="divider-lbl" style="text-align:center;">or pick a sample (demo)</div>
+              <div class="sample-row" id="sampleRow" style="justify-content:center;"></div>
+            </div>
+            <div id="suggStep" style="display:none;">
+              <div class="divider-lbl">Looks like… <span style="text-transform:none;font-weight:400;">(select to confirm)</span></div>
+              <div id="suggList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= ENROLL MODAL ================= -->
+<div class="overlay" id="enrollOverlay">
+  <div class="modal">
+    <div id="enrollForm">
+      <h2>Enroll a patient</h2>
+      <div class="sub">Lightweight form — under a minute.</div>
+      <div class="frow"><label>Full name</label><input id="eName" placeholder="Patient name"></div>
+      <div class="frow2">
+        <div class="frow"><label>Date of birth</label><input id="eDob" type="date" value="1972-06-15"></div>
+        <div class="frow"><label>Gender</label><select id="eGender"><option>Female</option><option>Male</option><option>Other</option></select></div>
+      </div>
+      <div class="frow2">
+        <div class="frow"><label>Height (cm)</label><input id="eHeight" type="number" value="162"></div>
+        <div class="frow"><label>Weight (kg)</label><input id="eWeight" type="number" value="70"></div>
+      </div>
+      <div class="frow"><label>Mobile (for secure link & OTP)</label><input id="ePhone" placeholder="+91 ·····" value="+91 98450 12345"></div>
+      <button class="primary-btn" onclick="createPatient()">Generate secure link</button>
+      <button class="ghost-btn" onclick="closeEnroll()">Cancel</button>
+    </div>
+    <div id="enrollDone" style="display:none;">
+      <h2>Secure link created 🎉</h2>
+      <div class="sub">Sent by SMS to <span id="doneName"></span>. Single-use, expires in 72 h.</div>
+      <div class="linkbox">
+        <div>🔗 <span class="lk" id="doneLink"></span></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);">One-time password</div>
+        <div class="otp-big">4 8 2 1</div>
+      </div>
+      <button class="primary-btn" onclick="jumpToPatient()">Open the Patient App as them →</button>
+      <button class="ghost-btn" onclick="closeEnroll()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =================== DATA =================== */
+const SLOT_DEFS = [
+  ['🍵','Wake-up drink'],['🍳','Breakfast'],['🍎','Mid-day snack'],['🍛','Lunch'],
+  ['☕','Evening tea'],['🥜','Evening snack'],['🍲','Dinner'],['🥛','Bedtime']
+];
+const RECIPES = [
+  {em:'🥞', n:'Ragi dosa with sambar', cal:210, tags:['veg','vegan'], free:['dairy']},
+  {em:'🥣', n:'Moong dal chilla', cal:180, tags:['veg','vegan','egg']},
+  {em:'🍲', n:'Bajra khichdi', cal:240, tags:['veg','vegan']},
+  {em:'🥗', n:'Sprouts & cucumber salad', cal:130, tags:['veg','vegan','egg','nonveg']},
+  {em:'🐟', n:'Grilled fish + veg', cal:260, tags:['nonveg'], allergen:'seafood'},
+  {em:'🍛', n:'Palak paneer (low-oil)', cal:230, tags:['veg'], allergen:'dairy'},
+  {em:'🍳', n:'Masala egg-white bhurji', cal:160, tags:['egg','nonveg'], allergen:'egg'},
+  {em:'🥘', n:'Vegetable oats upma', cal:190, tags:['veg','vegan','egg']},
+];
+const DISH_SUGGESTIONS = {
+  '🍵':[['🍵','Green tea, no sugar','2 kcal'],['☕','Black coffee','5 kcal'],['🥛','Turmeric milk','90 kcal']],
+  '🍳':[['🥞','Ragi dosa + sambar','210 kcal'],['🥣','Moong dal chilla','180 kcal'],['🍞','Multigrain toast + curd','220 kcal']],
+  '🍎':[['🍎','Apple (1 medium)','80 kcal'],['🥜','Roasted chana','110 kcal'],['🍊','Orange','60 kcal']],
+  '🍛':[['🍛','Roti, dal & sabzi','420 kcal'],['🍲','Bajra khichdi + curd','360 kcal'],['🥗','Millet bowl + salad','380 kcal']],
+  '☕':[['☕','Tea with less sugar','45 kcal'],['🍵','Green tea','2 kcal'],['🥛','Buttermilk','40 kcal']],
+  '🥜':[['🥜','Sprouts chaat','140 kcal'],['🍿','Plain roasted makhana','90 kcal'],['🥒','Cucumber sticks','25 kcal']],
+  '🍲':[['🍲','Veg dalia + salad','340 kcal'],['🐟','Grilled fish + veg','260 kcal'],['🍛','2 phulka + palak dal','330 kcal']],
+  '🥛':[['🥛','Warm milk (no sugar)','120 kcal'],['🍵','Chamomile tea','2 kcal'],['🥛','Buttermilk','40 kcal']],
+};
+const ALLERGENS = ['Nuts','Dairy','Gluten','Egg','Seafood','Soy'];
+const PREFS = ['Vegan','Veg','Non-Veg','Egg'];
+
+let patients = [
+  { id:1, name:'Ramesh Kumar', age:58, gender:'Male', h:170, w:78, phone:'+91 98450 22110', status:'active',
+    sugar:[148,141,152,138,144], sys:[138,134,140,132,136], dia:[88,86,90,84,87], hr:[78,76,80,74,77],
+    meals:[0,1,2,3,4,6], mealDishes:{0:'Green tea',1:'Ragi dosa',2:'Apple',3:'Roti, dal & sabzi',4:'Tea',6:'Veg dalia'},
+    pref:'Veg', allergens:['Nuts'], guide:'' },
+  { id:2, name:'Lakshmi Devi', age:52, gender:'Female', h:158, w:66, phone:'+91 98450 88221', status:'active',
+    sugar:[118,112,120,109,114], sys:[126,122,128,120,124], dia:[82,80,84,78,81], hr:[72,70,73,69,71],
+    meals:[0,1,3,4,5,6,7], mealDishes:{0:'Black coffee',1:'Moong dal chilla',3:'Millet bowl',4:'Buttermilk',5:'Makhana',6:'Grilled fish',7:'Warm milk'},
+    pref:'Non-Veg', allergens:[], guide:'' },
+];
+let nextId = 3;
+let selPatient = patients[0];
+let appPatient = null;       // patient going through app flow
+let appState = { pref:'Veg', allergens:new Set(), slotIdx:null, graph:'sugar' };
+let cdTimer = null;
+
+/* =================== HELPERS =================== */
+const $ = id => document.getElementById(id);
+const initials = n => n.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); }
+function spark(svgEl, vals, color, danger){
+  if (!vals || !vals.length){ svgEl.innerHTML=''; return; }
+  if (vals.length===1) vals = [vals[0], vals[0]];
+  const w=300,h=52,pad=6;
+  const mn=Math.min(...vals), mx=Math.max(...vals), rng=(mx-mn)||1;
+  const pts = vals.map((v,i)=>[pad+i*(w-2*pad)/(vals.length-1), h-pad-((v-mn)/rng)*(h-2*pad)]);
+  let d = pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  svgEl.innerHTML = `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>` +
+    pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.4" fill="${(danger&&danger(vals[i]))?'#C0392B':color}"/>`).join('');
+}
+
+/* =================== MODE SWITCH =================== */
+function switchMode(m){
+  $('btnPortal').classList.toggle('active', m==='portal');
+  $('btnPhone').classList.toggle('active', m==='phone');
+  $('portal').classList.toggle('visible', m==='portal');
+  $('phoneWrap').classList.toggle('visible', m==='phone');
+  if (m==='phone' && !appPatient){ appPatient = patients[0]; seedAppFromPatient(); go('scr-home'); refreshHome(); }
+  if (m==='portal'){ renderPortal(); }
+}
+
+/* =================== PORTAL =================== */
+function renderPlist(){
+  $('plist').innerHTML = patients.map(p=>`
+    <li class="${p.id===selPatient?.id?'sel':''}" onclick="selectPatient(${p.id})">
+      <div class="avatar">${initials(p.name)}</div>
+      <div><div class="pname">${p.name}</div><div class="pmeta">${p.age} y · ${p.gender}</div></div>
+      ${p.status==='pending'?'<span class="pending-pill">link sent</span>':''}
+    </li>`).join('');
+}
+function selectPatient(id){ selPatient = patients.find(p=>p.id===id); renderPortal(); }
+function renderPortal(){
+  renderPlist();
+  const p = selPatient;
+  if (!p){ $('portalMain').innerHTML = '<div class="empty-main">Select a patient</div>'; return; }
+  if (p.status==='pending'){
+    $('portalMain').innerHTML = `
+      <div class="card"><div class="patient-head">
+        <div class="avatar">${initials(p.name)}</div>
+        <div><h2>${p.name}</h2><div class="pmeta">${p.age} y · ${p.gender} · ${p.h} cm · ${p.w} kg</div></div>
+        <span class="flag warn">Awaiting first login</span></div>
+        <p style="font-size:13.5px;color:var(--muted);line-height:1.6;">A secure link and OTP were sent to <b>${p.phone}</b>. Data will appear here once ${p.name.split(' ')[0]} authenticates, confirms their details, and completes setup.<br><br>👉 Try it: switch to the <b>Patient App</b> (top right) to walk through their onboarding.</p>
+      </div>`;
+    return;
+  }
+  const lastSugar = p.sugar[p.sugar.length-1];
+  const hiSugar = lastSugar >= 130;
+  const missed = SLOT_DEFS.map((_,i)=>i).filter(i=>!p.meals.includes(i));
+  $('portalMain').innerHTML = `
+    <div class="patient-head">
+      <div class="avatar">${initials(p.name)}</div>
+      <div><h2>${p.name}</h2><div class="pmeta">${p.age} y · ${p.gender} · ${p.h} cm · ${p.w} kg · ${p.pref}${p.allergens.length?' · allergies: '+p.allergens.join(', '):''}</div></div>
+      <span class="flag ${hiSugar?'warn':'ok'}">${hiSugar?'⚠ Fasting sugar above target':'On track'}</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat-tile"><div class="k">${lastSugar}</div><div class="l">fasting sugar today (mg/dL)</div></div>
+      <div class="stat-tile"><div class="k">${p.sys[p.sys.length-1]}/${p.dia[p.dia.length-1]}</div><div class="l">blood pressure (mmHg)</div></div>
+      <div class="stat-tile"><div class="k">${p.hr[p.hr.length-1]}</div><div class="l">heart rate (bpm)</div></div>
+      <div class="stat-tile"><div class="k">${p.meals.length}/8</div><div class="l">meal slots logged today</div></div>
+    </div>
+    <div class="grid3" style="margin-bottom:14px;">
+      <div class="card"><h3>Fasting sugar — 5 days</h3><svg class="spark" id="pSpark1" viewBox="0 0 300 52" preserveAspectRatio="none"></svg></div>
+      <div class="card"><h3>Systolic BP — 5 days</h3><svg class="spark" id="pSpark2" viewBox="0 0 300 52" preserveAspectRatio="none"></svg></div>
+      <div class="card"><h3>Heart rate — 5 days</h3><svg class="spark" id="pSpark3" viewBox="0 0 300 52" preserveAspectRatio="none"></svg></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Today's meal timeline</h3>
+        <div class="meal-strip">
+          ${SLOT_DEFS.map((s,i)=>`<div class="meal-chip ${p.meals.includes(i)?'':'missed'}"><div class="em">${s[0]}</div><div class="lbl">${s[1]}</div><div class="dish">${p.mealDishes[i]||(p.meals.includes(i)?'':'—')}</div></div>`).join('')}
+        </div>
+        ${missed.length?`<div style="font-size:12px;color:var(--muted);margin-top:10px;">Missed: ${missed.map(i=>SLOT_DEFS[i][1]).join(', ')}</div>`:''}
+      </div>
+      <div class="card guide-box">
+        <h3>Guidance to patient</h3>
+        <textarea id="guideInput" placeholder="e.g. Your fasting sugar is trending up — let's swap the evening tea biscuits for roasted makhana this week.">${p.guide||''}</textarea>
+        <button class="send-guide" onclick="sendGuide()">Send to ${p.name.split(' ')[0]}'s app</button>
+        <div class="guide-sent" id="guideSent">✓ Sent — it now shows in the patient's app.</div>
+      </div>
+    </div>`;
+  spark($('pSpark1'), p.sugar, '#028090', v=>v>=130);
+  spark($('pSpark2'), p.sys, '#00A896', v=>v>=140);
+  spark($('pSpark3'), p.hr, '#02C39A');
+}
+function sendGuide(){
+  selPatient.guide = $('guideInput').value.trim();
+  $('guideSent').style.display='block';
+  if (appPatient && appPatient.id===selPatient.id) refreshHome();
+}
+
+/* =================== ENROLL =================== */
+function openEnroll(){ $('enrollOverlay').classList.add('visible'); $('enrollForm').style.display='block'; $('enrollDone').style.display='none'; $('eName').value=''; }
+function closeEnroll(){ $('enrollOverlay').classList.remove('visible'); }
+function createPatient(){
+  const name = $('eName').value.trim() || 'Priya Sharma';
+  const dob = new Date($('eDob').value || '1972-06-15');
+  const age = Math.max(1, 2026 - dob.getFullYear());
+  const p = { id:nextId++, name, age, gender:$('eGender').value, h:+$('eHeight').value||162, w:+$('eWeight').value||70,
+    phone:$('ePhone').value, status:'pending', sugar:[], sys:[], dia:[], hr:[], meals:[], mealDishes:{}, pref:'Veg', allergens:[], guide:'',
+    dobStr: $('eDob').value };
+  patients.push(p); selPatient = p; renderPlist();
+  $('doneName').textContent = name.split(' ')[0];
+  $('doneLink').textContent = 'https://dnt.app/i/' + Math.random().toString(36).slice(2,8).toUpperCase();
+  $('enrollForm').style.display='none'; $('enrollDone').style.display='block';
+}
+function jumpToPatient(){
+  closeEnroll();
+  appPatient = selPatient;
+  $('inviteText').textContent = `Dr. Anita Rao (Sunrise Diabetes Clinic) has prescribed the VitalSync for ${appPatient.name}.`;
+  switchMode('phone'); go('scr-link');
+}
+
+/* =================== PATIENT APP =================== */
+function go(id){ document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('visible')); $(id).classList.add('visible'); }
+function otpNext(el,i){ if(el.value && i<3) el.parentElement.children[i+1].focus(); }
+function checkOtp(){
+  const code = [...document.querySelectorAll('.otp-inputs input')].map(i=>i.value).join('');
+  if (code==='4821'){ $('otpErr').style.display='none'; renderVerify(); go('scr-verify'); }
+  else $('otpErr').style.display='block';
+}
+function renderVerify(){
+  const p = appPatient || patients[0];
+  $('verifyRows').innerHTML = `
+    <div class="verify-row"><div><div class="vl">Name</div><div class="vv">${p.name}</div></div></div>
+    <div class="verify-row"><div><div class="vl">Gender</div><div class="vv">${p.gender}</div></div></div>
+    <div class="verify-row"><div class="vl">Date of birth</div><input type="date" value="${p.dobStr||'1968-03-12'}"></div>
+    <div class="verify-row"><div class="vl">Height (cm)</div><input type="number" value="${p.h}" onchange="appPatient.h=+this.value"></div>
+    <div class="verify-row" style="border-bottom:none;"><div class="vl">Weight (kg)</div><input type="number" value="${p.w}" onchange="appPatient.w=+this.value"></div>`;
+}
+function renderChips(){
+  $('prefChips').innerHTML = PREFS.map(p=>`<button class="chip ${appState.pref===p?'on':''}" onclick="appState.pref='${p}';renderChips()">${p}</button>`).join('');
+  $('allergenChips').innerHTML = ALLERGENS.map(a=>`<button class="chip ${appState.allergens.has(a)?'on':''}" onclick="toggleAllergen('${a}')">${a}</button>`).join('');
+}
+function toggleAllergen(a){ appState.allergens.has(a)?appState.allergens.delete(a):appState.allergens.add(a); renderChips(); }
+function finishSetup(){
+  const p = appPatient;
+  p.pref = appState.pref; p.allergens = [...appState.allergens]; p.status='active';
+  if (!p.sugar.length){ p.sugar=[]; p.sys=[]; p.dia=[]; p.hr=[]; }
+  seedAppFromPatient(); go('scr-home'); refreshHome();
+  toast('Setup complete — your clinic can now see your progress');
+  renderPortal();
+}
+function seedAppFromPatient(){
+  appState.pref = appPatient.pref; appState.allergens = new Set(appPatient.allergens);
+  renderChips();
+}
+
+/* ---- home ---- */
+function refreshHome(){
+  const p = appPatient;
+  $('homeName').textContent = `Hi ${p.name.split(' ')[0]} 👋`;
+  const gb = $('guideBanner');
+  if (p.guide){ gb.style.display='block'; $('guideText').textContent = p.guide; } else gb.style.display='none';
+  const bmr = p.gender==='Male' ? 1700 : 1500;
+  $('tCal').textContent = (bmr+ (p.w>75?-100:0)).toLocaleString();
+  $('slotGrid').innerHTML = SLOT_DEFS.map((s,i)=>`
+    <div class="slot ${p.meals.includes(i)?'done':''}" onclick="openMeal(${i})">
+      <div class="em">${p.meals.includes(i)?'✅':s[0]}</div><div class="lbl">${s[1]}</div>
+    </div>`).join('');
+  $('mealCount').textContent = `· ${p.meals.length}/8 logged`;
+  const rs = RECIPES.filter(r=>{
+    const prefKey = appState.pref.toLowerCase().replace('-','');
+    if (!r.tags.includes(prefKey==='nonveg'?'nonveg':prefKey)) return false;
+    if (r.allergen && appState.allergens.has(r.allergen.charAt(0).toUpperCase()+r.allergen.slice(1))) return false;
+    return true;
+  });
+  $('recipeRow').innerHTML = (rs.length?rs:RECIPES.slice(0,4)).map(r=>`
+    <div class="recipe" onclick="toast('${r.n} — full recipe opens here')">
+      <div class="rimg">${r.em}</div><div class="rname">${r.n}</div><div class="rcal">${r.cal} kcal · low GI</div>
+    </div>`).join('');
+  homeGraph(appState.graph);
+}
+function homeGraph(kind, btn){
+  appState.graph = kind;
+  if (btn){ btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+  const p = appPatient;
+  const data = kind==='sugar'?p.sugar: kind==='bp'?p.sys : p.hr;
+  if (!data.length){ $('homeSpark').innerHTML=''; $('homeSparkHint').textContent='No readings yet — tap ＋ to add your first.'; return; }
+  const last5 = data.slice(-5);
+  spark($('homeSpark'), last5, '#028090', kind==='sugar'?(v=>v>=130):(kind==='bp'?(v=>v>=140):null));
+  const units = kind==='sugar'?'mg/dL': kind==='bp'?'mmHg (systolic)':'bpm';
+  $('homeSparkHint').textContent = `Latest: ${last5[last5.length-1]} ${units}`;
+}
+
+/* ---- countdown & entry ---- */
+function startCountdown(){
+  go('scr-count'); let n = 60; $('cdNum').textContent = n;
+  cdTimer = setInterval(()=>{ n--; $('cdNum').textContent = n; if(n<=0) endCountdown(); }, 1000);
+}
+function endCountdown(){ clearInterval(cdTimer); go('scr-entry'); }
+function saveReading(){
+  const s=+$('inSugar').value, sy=+$('inSys').value, di=+$('inDia').value, hr=+$('inHr').value;
+  if(!s||!sy||!di||!hr){ toast('Please fill all readings'); go('scr-entry'); return; }
+  $('wSugar').style.display = s>250?'block':'none';
+  const p = appPatient;
+  p.sugar.push(s); p.sys.push(sy); p.dia.push(di); p.hr.push(hr);
+  // brief
+  const hi = s>=130, hiBp = sy>=140;
+  $('briefPills').innerHTML = `
+    <span class="vpill ${hi?'hi':''}">Sugar ${s} mg/dL</span>
+    <span class="vpill ${hiBp?'hi':''}">BP ${sy}/${di}</span>
+    <span class="vpill">HR ${hr} bpm</span>`;
+  let msg = '';
+  if (!hi && !hiBp) msg = `Nice work — your fasting sugar and blood pressure are within your usual range today. Keep the morning walk going and stay on your meal plan.`;
+  else {
+    if (hi) msg += `Your fasting sugar is above your 130 mg/dL target. Recent trend suggests watching tonight's dinner portion and taking a 20-minute walk. `;
+    if (hiBp) msg += `Blood pressure is on the higher side — take today's readings seated and relaxed, and go easy on salty snacks.`;
+  }
+  msg += hi||hiBp ? ' Your care team has been updated.' : '';
+  $('briefText').textContent = msg;
+  ['inSugar','inSys','inDia','inHr'].forEach(id=>$(id).value='');
+  go('scr-brief');
+  renderPortal();
+}
+
+/* ---- meals ---- */
+function openMeal(i){
+  appState.slotIdx = i;
+  const s = SLOT_DEFS[i];
+  $('mealTitle').textContent = `Log: ${s[1]}`;
+  $('photoPreview').innerHTML = '📷';
+  $('photoStep').style.display='block'; $('suggStep').style.display='none';
+  $('sampleRow').innerHTML = DISH_SUGGESTIONS[s[0]].map((d,j)=>`<div class="sample" onclick="samplePicked(${j})">${d[0]}</div>`).join('');
+  go('scr-meal');
+}
+function photoPicked(ev){
+  const f = ev.target.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  $('photoPreview').innerHTML = `<img src="${url}" alt="meal photo">`;
+  showSuggestions();
+}
+function samplePicked(j){
+  const s = SLOT_DEFS[appState.slotIdx];
+  $('photoPreview').innerHTML = `<span style="font-size:64px">${DISH_SUGGESTIONS[s[0]][j][0]}</span>`;
+  showSuggestions();
+}
+function showSuggestions(){
+  const s = SLOT_DEFS[appState.slotIdx];
+  $('photoStep').style.display='none'; $('suggStep').style.display='block';
+  $('suggList').innerHTML = DISH_SUGGESTIONS[s[0]].map((d)=>`
+    <div class="sugg" onclick="confirmDish('${d[1].replace(/'/g,"\\'")}')">
+      <span class="sem">${d[0]}</span>
+      <div><div class="sn">${d[1]}</div><div class="sc">${d[2]} · est. from photo</div></div>
+      <span class="ai">AI · Gemini</span>
+    </div>`).join('');
+}
+function confirmDish(name){
+  const p = appPatient, i = appState.slotIdx;
+  if (!p.meals.includes(i)) p.meals.push(i);
+  p.mealDishes[i] = name;
+  go('scr-home'); refreshHome();
+  toast(`${SLOT_DEFS[i][1]} logged — synced to your clinic ✓`);
+  renderPortal();
+}
+
+/* =================== INIT =================== */
+renderChips();
+renderPortal();
+appPatient = patients[0];
+seedAppFromPatient();
+refreshHome();
+</script>
+</body>
+</html>

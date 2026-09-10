@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VitalSync — Patient</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Firebase JS SDK (CDN) -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<style>
+  :root {
+    --accent: #028090;
+    --accent-dark: #0A3A40;
+    --accent-light: #E8F5F4;
+    --success: #02C39A;
+    --success-bg: #F0FBF7;
+    --warning: #C9A227;
+    --warning-bg: #FFF8E7;
+    --critical: #C0392B;
+    --border: #D5E3E2;
+    --text-primary: #0A3A40;
+    --text-secondary: #5E7477;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+  body { background: #F4F8F8; color: var(--text-primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  button { cursor: pointer; border: none; font-family: inherit; }
+  input, select, textarea { font-family: inherit; font-size: 14px; color: var(--text-primary); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ===== PATIENT PHONE WRAPPER ===== */
+  .phone-wrap { display: flex; justify-content: center; padding: 20px 10px; width: 100%; max-width: 440px; }
+  .phone { width: 392px; height: 800px; max-height: 94vh; background: #000; border-radius: 44px; padding: 10px; box-shadow: 0 18px 50px rgba(10,58,64,.35); position: relative; }
+  .notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 120px; height: 26px; background: #000; border-radius: 0 0 16px 16px; z-index: 5; }
+  .screen { width: 100%; height: 100%; background: #F4F8F8; border-radius: 36px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+  .app-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .status-strip { height: 34px; flex-shrink: 0; background: #0A3A40; }
+  .app-screen { display: none; flex-direction: column; height: 100%; }
+  .app-screen.visible { display: flex; }
+
+  .hero { background: #0A3A40; color: #fff; padding: 44px 24px 26px; text-align: center; }
+  .hero .big-emoji { font-size: 44px; }
+  .hero h1 { font-size: 21px; margin-top: 10px; }
+  .hero p { font-size: 13px; color: #CFE8E6; margin-top: 6px; line-height: 1.5; }
+  .pad { padding: 18px; }
+  .app-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(10,58,64,.07); margin-bottom: 14px; }
+  .app-card h4 { font-size: 13px; color: #5E7477; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
+
+  /* Demo Picker */
+  .picker-patient-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1.5px solid #D5E3E2;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .picker-patient-card:hover {
+    border-color: #028090;
+    background: #F0FDF4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(2,128,144,.12);
+  }
+  .picker-name { font-size: 15px; font-weight: 700; color: #0A3A40; }
+  .picker-meta { font-size: 12.5px; color: #5E7477; margin-top: 3px; }
+  .picker-arrow { font-size: 18px; color: #028090; font-weight: 700; }
+
+  .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 18px 0; }
+  .otp-inputs input { width: 52px; height: 58px; text-align: center; font-size: 24px; font-weight: 700; border: 2px solid #D5E3E2; border-radius: 12px; color: #0A3A40; }
+  .otp-inputs input:focus { border-color: #00A896; outline: none; }
+  .auth-input { width: 100%; padding: 12px 14px; border: 2px solid #D5E3E2; border-radius: 12px; font-size: 15px; font-weight: 600; color: #0A3A40; margin: 10px 0; outline: none; transition: border-color .15s; }
+  .auth-input:focus { border-color: #028090; }
+  .auth-code-input { width: 100%; max-width: 220px; padding: 10px; border: 2px solid #D5E3E2; border-radius: 12px; font-size: 24px; font-weight: 700; color: #0A3A40; letter-spacing: 8px; text-align: center; margin: 14px auto; display: block; outline: none; transition: border-color .15s; }
+  .auth-code-input:focus { border-color: #028090; }
+  .hint { font-size: 12px; color: #5E7477; text-align: center; }
+  .hint b { color: #028090; }
+  .verify-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid #EDF3F2; font-size: 14px; gap: 8px; }
+  .verify-row .vl { color: #5E7477; font-size: 12.5px; }
+  .verify-row .vv { font-weight: 600; color: #0A3A40; }
+  .verify-row input { width: 110px; padding: 6px 8px; border: 1.5px solid #D5E3E2; border-radius: 8px; text-align: right; box-sizing: border-box; }
+  .verify-row input[type="date"] { width: 152px; min-width: 140px; font-size: 13px; text-align: right; }
+  .phone-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .p-chip { padding: 7px 13px; border-radius: 999px; background: #fff; border: 1.5px solid #D5E3E2; font-size: 12.5px; color: #1F2A2C; }
+  .p-chip.on { background: #028090; border-color: #028090; color: #fff; font-weight: 600; }
+  .appbar { background: #0A3A40; color: #fff; padding: 14px 18px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .appbar .t { font-weight: 700; font-size: 15px; }
+  .appbar .s { font-size: 11px; color: #9FBFBC; }
+  .back-btn { background: transparent; color: #CFE8E6; font-size: 18px; padding: 2px 6px; }
+  
+  .profile-bar { background: #E8F5F4; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 12px; }
+  .profile-bar .p-info { color: #0A3A40; font-weight: 600; }
+  .profile-bar .p-sub { color: #5E7477; font-size: 11px; margin-top: 2px; }
+  .switch-patient-btn { background: transparent; color: #028090; font-size: 11px; font-weight: 600; text-decoration: underline; padding: 4px 0; }
+
+  /* 3-tile Targets Row (Kcal, Sodium, Steps) */
+  .targets { display: flex; gap: 8px; margin-bottom: 12px; }
+  .target { flex: 1; background: #fff; border-radius: 12px; padding: 9px 6px; text-align: center; box-shadow: 0 2px 8px rgba(10,58,64,.07); }
+  .target .tv { font-size: 16px; font-weight: 700; color: #028090; font-variant-numeric: tabular-nums; }
+  .target .tl { font-size: 9.5px; color: #5E7477; margin-top: 2px; }
+  
+  /* 4 Columns x 2 Rows Fixed Meal Grid (All 8 Slots at Once) */
+  .phone-slots {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .p-slot {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: 88px;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1.5px dashed #BFD6D4;
+    border-radius: 10px;
+    padding: 6px 3px;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .p-slot .em { font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .p-slot .lbl { font-size: 8.5px; font-weight: 600; color: #5E7477; margin-top: 2px; line-height: 1.1; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.02em; }
+  .p-slot .sugg-lbl {
+    font-size: 7.8px;
+    line-height: 1.2;
+    color: #028090;
+    font-weight: 600;
+    margin-top: 2px;
+    width: 100%;
+    padding: 0 2px;
+    box-sizing: border-box;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    text-align: center;
+  }
+  .p-slot.done { border-style: solid; border-color: #02C39A; background: #F0FBF7; }
+  .p-slot.done .lbl { color: #00A896; font-weight: 600; }
+  .p-slot.done .sugg-lbl { color: #00A896; }
+
+  /* Activity Bar at Bottom */
+  .activity-bar {
+    background: #E8F5F4;
+    border: 1px solid #BFD6D4;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 8px;
+    margin-bottom: 84px; /* Ample clearance so entire card scrolls completely above the floating + button */
+  }
+  .activity-bar .act-lbl { font-size: 9.5px; font-weight: 700; color: #5E7477; text-transform: uppercase; letter-spacing: 0.05em; }
+  .activity-bar .act-text { font-size: 13px; font-weight: 600; color: #0A3A40; line-height: 1.45; word-break: break-word; overflow-wrap: break-word; white-space: normal; }
+
+  .fab { position: absolute; bottom: 20px; right: 20px; width: 54px; height: 54px; border-radius: 50%; background: #028090; color: #fff; font-size: 27px; box-shadow: 0 6px 16px rgba(2,128,144,.45); z-index: 10; display: flex; align-items: center; justify-content: center; }
+  .countdown-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0A3A40; color: #fff; text-align: center; padding: 24px; }
+  .cd-circle { width: 180px; height: 180px; border-radius: 50%; border: 6px solid #02C39A; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 22px 0; }
+  .cd-num { font-size: 52px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .skip-btn { margin-top: 20px; background: rgba(255,255,255,.14); color: #CFE8E6; padding: 9px 22px; border-radius: 999px; font-size: 12.5px; }
+
+  .phone-primary-btn { width: 100%; background: #028090; color: #fff; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity .15s; }
+  .photo-preview {
+    width: 100%;
+    min-height: 140px;
+    max-height: 280px;
+    border-radius: 14px;
+    background: #E8F5F4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .photo-preview img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    border-radius: 14px;
+    display: block;
+  }
+  .sugg-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1.5px solid #D5E3E2;
+    border-radius: 12px;
+    padding: 11px 13px;
+    margin-bottom: 9px;
+    cursor: pointer;
+    font-size: 13.5px;
+    transition: all .15s ease;
+    user-select: none;
+  }
+  .sugg-card:hover { border-color: #028090; }
+  .sugg-card.selected { border-color: #028090; background: #F0FBF7; }
+  .sugg-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid #BFD6D4;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    transition: all .15s ease;
+  }
+  .sugg-check.checked { background: #028090; border-color: #028090; }
+  .sugg-card .sn { font-weight: 600; color: #0A3A40; }
+  .sugg-card .sc { font-size: 11px; color: #5E7477; font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+  .toast { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); background: #0A3A40; color: #fff; font-size: 12.5px; padding: 10px 18px; border-radius: 999px; opacity: 0; transition: opacity .3s; z-index: 40; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .app-loader { position: absolute; inset: 0; background: rgba(255,255,255,.88); backdrop-filter: blur(2px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 30; text-align: center; padding: 20px; }
+  .app-loader.active { display: flex; }
+  .spinner-ring { width: 26px; height: 26px; border: 2.5px solid #E3E8EA; border-top-color: var(--accent); border-radius: 50%; animation: c-spin .7s linear infinite; }
+  @keyframes c-spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 480px) {
+    body { padding: 0; background: #000; }
+    .phone-wrap { padding: 0; height: 100vh; max-width: 100vw; }
+    .phone { width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; padding: 0; }
+    .screen { border-radius: 0; }
+    .notch { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-wrap" id="phoneWrap">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="status-strip"></div>
+      <div class="app-loader" id="phoneLoader">
+        <div class="spinner-ring" style="margin-bottom:10px;"></div>
+        <div id="phoneLoaderText" style="font-size:13px;font-weight:600;color:#0A3A40;">Preparing your plan…</div>
+      </div>
+
+      <!-- 0. Demo Patient Picker Screen -->
+      <div class="app-screen" id="scr-picker">
+        <div class="hero" style="padding:32px 20px 20px;">
+          <div class="big-emoji">🩺</div>
+          <h1 style="font-size:19px;">VitalSync Demo</h1>
+          <p style="font-size:12.5px;">Prescribed nutrition & glycemic care telemetry</p>
+        </div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="app-card">
+              <h4>Demo mode — choose a patient</h4>
+              <p style="font-size:12px;color:#5E7477;margin-bottom:14px;line-height:1.4;">
+                Select an active patient to view their personalized clinical brief, telemetry trends, and regional meal plan:
+              </p>
+              <div id="pickerList">
+                <div style="text-align:center;padding:20px;font-size:12px;color:#5E7477;">
+                  <div class="spinner-ring" style="margin:0 auto 6px;"></div> Loading demo patients...
+                </div>
+              </div>
+              <div style="font-size:11px;color:#5E7477;margin-top:10px;text-align:center;line-height:1.4;border-top:1px solid #EDF3F2;padding-top:10px;">
+                PoC only — in production each patient receives a private secure link with OTP.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1. Invitation / Welcome -->
+      <div class="app-screen" id="scr-link">
+        <div class="hero">
+          <div class="big-emoji">🩺</div>
+          <h1>Prescription Active</h1>
+          <p>Dr. Anita Rao has prescribed VitalSync daily diabetes care for you.</p>
+        </div>
+        <div class="pad" style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+          <div class="app-card">
+            <h4>Welcome to VitalSync</h4>
+            <div class="hint" style="text-align:left;font-size:13px;line-height:1.6;margin-bottom:12px;">
+              Welcome <b id="invPatientName" style="color:#0A3A40;">Patient</b>! Your clinic has enrolled you for daily glycemic telemetry and nutrition planning.
+            </div>
+            <div style="background:#E8F5F4;border:1px solid #BFD6D4;border-radius:12px;padding:12px;">
+              <div style="font-size:10.5px;color:#5E7477;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Enrolled Mobile Number</div>
+              <div id="invPhoneDisplay" style="font-size:16px;font-weight:700;color:#0A3A40;margin-top:3px;">+91 ··········</div>
+              <div style="font-size:11.5px;color:#5E7477;margin-top:5px;line-height:1.4;">
+                Please verify with the mobile number the doctor entered to activate your care plan.
+              </div>
+            </div>
+          </div>
+          <button class="phone-primary-btn" id="btnGoToOtp" style="margin-top:12px;" onclick="startPhoneAuth()">Verify Phone with OTP</button>
+        </div>
+      </div>
+
+      <!-- 2. OTP -->
+      <div class="app-screen" id="scr-otp">
+        <div class="appbar">
+          <button class="back-btn" onclick="goScreen('scr-link')">‹</button>
+          <div><div class="t">Verify phone</div><div class="s">Firebase phone authentication</div></div>
+        </div>
+        <div class="pad" style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+          <div class="app-card">
+            <!-- Step A: Confirm / Enter Phone Number -->
+            <div id="otpStepPhone">
+              <h4>Confirm your mobile</h4>
+              <p style="font-size:12.5px;color:#5E7477;line-height:1.5;margin-bottom:10px;">
+                We will verify your device with a secure one-time code via Firebase Auth.
+              </p>
+              <label style="font-size:11px;color:#5E7477;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">Mobile Number</label>
+              <input id="authPhoneInput" class="auth-input" type="tel" placeholder="+91 5555012345" value="+91 5555012345">
+              <div class="hint" style="text-align:left;font-size:11.5px;color:#5E7477;margin-bottom:12px;">
+                Test numbers enabled for PoC (e.g. <b>+91 5555012345</b> / code <b>482100</b>).
+              </div>
+              <button class="phone-primary-btn" id="btnSendOtp" onclick="sendOtpCode()">Send OTP Code</button>
+            </div>
+
+            <!-- Step B: Enter Verification Code -->
+            <div id="otpStepCode" style="display:none;">
+              <h4>Enter 6-digit code</h4>
+              <div class="hint" style="text-align:center;font-size:12.5px;color:#5E7477;margin-bottom:10px;">
+                Verification code sent to <b id="otpSentPhone" style="color:#0A3A40;">+91 ·····</b>
+              </div>
+              <input id="otpCodeInput" class="auth-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="······">
+              <button class="phone-primary-btn" id="btnVerifyOtp" onclick="confirmOtpCode()">Verify & Continue</button>
+              <button type="button" onclick="showPhoneStep()" style="background:none;border:none;color:#028090;font-size:12px;font-weight:600;text-decoration:underline;margin-top:14px;width:100%;text-align:center;cursor:pointer;">
+                Change phone number
+              </button>
+            </div>
+
+            <!-- Error display -->
+            <div class="hint" id="otpErr" style="color:#C0392B;display:none;margin-top:12px;font-weight:600;"></div>
+          </div>
+
+          <!-- Invisible reCAPTCHA container for Firebase Auth -->
+          <div id="recaptcha-container"></div>
+        </div>
+      </div>
+
+      <!-- 3. Verify Doctor Details -->
+      <div class="app-screen" id="scr-verify">
+        <div class="appbar">
+          <button class="back-btn" onclick="goScreen('scr-otp')">‹</button>
+          <div><div class="t">Verify details</div><div class="s">Entered by clinic</div></div>
+        </div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="app-card">
+              <h4>Enrolled details</h4>
+              <div id="verifyRows"></div>
+            </div>
+            <button class="phone-primary-btn" onclick="goScreen('scr-setup')">Looks correct →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Setup Preferences -->
+      <div class="app-screen" id="scr-setup">
+        <div class="appbar">
+          <button class="back-btn" onclick="handleSetupBack()">‹</button>
+          <div><div class="t">Preferences</div><div class="s">Cuisine & dietary rules</div></div>
+        </div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="app-card">
+              <h4>Regional state cuisine</h4>
+              <select class="form-input" id="setupStateSelect" style="width:100%;padding:9px;border:1.5px solid #D5E3E2;border-radius:10px;font-size:13.5px;"></select>
+            </div>
+            <div class="app-card">
+              <h4>Dietary exclusions</h4>
+              <div class="phone-chips" id="setupExclusionChips"></div>
+            </div>
+            <div class="app-card">
+              <h4>Allergens</h4>
+              <div class="phone-chips" id="setupAllergenChips"></div>
+            </div>
+            <button class="phone-primary-btn" id="btnFinishSetup" onclick="finishSetup()">Save preferences</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Main Home Dashboard -->
+      <div class="app-screen" id="scr-home">
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="profile-bar">
+              <div onclick="openProfileSetup()" style="cursor:pointer;flex:1;min-width:0;" title="Edit preferences">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div class="p-info" id="homeName">Hi Patient 👋</div>
+                  <span style="font-size:11px;color:#028090;font-weight:600;background:#fff;border:1px solid #BFD6D4;padding:1px 6px;border-radius:6px;">Edit ✎</span>
+                </div>
+                <div class="p-sub"><span id="homeProfileState">Telangana Cuisine</span> · <span id="homeProfileExcl">No exclusions</span></div>
+              </div>
+              <button class="switch-patient-btn" onclick="switchPatientDemo()" style="margin-left:8px;flex-shrink:0;">Switch (demo)</button>
+            </div>
+
+            <!-- Re-openable Daily Brief Card -->
+            <div class="app-card" id="homeBriefCard" style="background:#0A3A40;color:#fff;cursor:pointer;position:relative;" onclick="handleHomeBriefCardClick()">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:11px;font-weight:700;color:#8AE3D2;text-transform:uppercase;letter-spacing:0.04em;">Today's Clinical Brief</span>
+                  <span id="homeBriefAlertBadge" style="display:none;font-size:9.5px;font-weight:700;background:#C0392B;color:#fff;padding:2px 6px;border-radius:999px;">Care Team Alerted</span>
+                </div>
+                <span style="font-size:11px;font-weight:600;color:#CFE8E6;white-space:nowrap;" id="homeBriefAction">View full brief →</span>
+              </div>
+              <div style="font-size:12.5px;color:#E8F5F4;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;" id="homeBriefSnippet">
+                Loading recommendations...
+              </div>
+            </div>
+
+            <!-- 3-Tile Targets Row (kcal, sodium, steps) -->
+            <div class="targets">
+              <div class="target"><div class="tv num" id="tCal">—</div><div class="tl">kcal target</div></div>
+              <div class="target"><div class="tv num" id="tSod">—</div><div class="tl">sodium cap</div></div>
+              <div class="target"><div class="tv num" id="tSteps">—</div><div class="tl">step goal</div></div>
+            </div>
+
+            <!-- Sparkline Trends -->
+            <div class="app-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <h4>5-Day Trends</h4>
+                <div style="display:flex;gap:4px;">
+                  <button class="p-chip on" id="tabSugar" style="padding:3px 8px;font-size:11px;" onclick="setAppGraph('sugar')">Sugar</button>
+                  <button class="p-chip" id="tabBP" style="padding:3px 8px;font-size:11px;" onclick="setAppGraph('bp')">BP</button>
+                  <button class="p-chip" id="tabHR" style="padding:3px 8px;font-size:11px;" onclick="setAppGraph('hr')">HR</button>
+                </div>
+              </div>
+              <svg id="homeSparkSvg" viewBox="0 0 300 52" style="width:100%;height:52px;"></svg>
+              <div class="hint" id="homeSparkHint" style="text-align:left;margin-top:4px;"></div>
+            </div>
+
+            <!-- Today's Meals 4x2 Fixed Grid (All 8 Slots at Once) -->
+            <div style="font-size:12px;font-weight:700;color:#5E7477;text-transform:uppercase;margin:14px 0 8px;">
+              Today's meals <span style="font-weight:400;text-transform:none;" id="mealCount">· 0/8 logged</span>
+            </div>
+            <div class="phone-slots" id="slotGrid"></div>
+
+            <!-- Activity Bar at Bottom -->
+            <div class="activity-bar" id="homeActivityBar">
+              <div class="act-lbl">Today's Activity</div>
+              <div class="act-text" id="homeActivityText" style="color:#5E7477;">Your activity plan appears after your morning reading</div>
+            </div>
+          </div>
+        </div>
+        <button class="fab" onclick="startCountdown()">＋</button>
+      </div>
+
+      <!-- 6. Countdown -->
+      <div class="app-screen" id="scr-count">
+        <div class="countdown-wrap">
+          <div class="big-emoji" style="font-size:38px;">🧘</div>
+          <div style="font-size:14px;color:#CFE8E6;line-height:1.6;max-width:260px;margin-top:12px;">Sit back, relax, and breathe slowly. Measure after countdown for resting readings.</div>
+          <div class="cd-circle"><div class="cd-num num" id="cdNum">60</div><div style="font-size:12px;color:#9FBFBC;">seconds</div></div>
+          <button class="skip-btn" onclick="endCountdown()">Skip (demo)</button>
+        </div>
+      </div>
+
+      <!-- 7. Entry form -->
+      <div class="app-screen" id="scr-entry">
+        <div class="appbar">
+          <button class="back-btn" onclick="goScreen('scr-home')">‹</button>
+          <div><div class="t">Morning readings</div><div class="s">fasting · seated · relaxed</div></div>
+        </div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="app-card">
+              <h4>Fasting blood glucose</h4>
+              <input id="inSugar" type="number" placeholder="135" style="width:100%;padding:10px;border:1.5px solid #D5E3E2;border-radius:10px;font-size:22px;font-weight:700;" class="num">
+              <div class="hint" style="text-align:left;margin-top:4px;">mg/dL (target: 80–130)</div>
+            </div>
+            <div class="app-card">
+              <h4>Blood pressure</h4>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <input id="inSys" type="number" placeholder="128" style="flex:1;padding:10px;border:1.5px solid #D5E3E2;border-radius:10px;font-size:20px;font-weight:700;" class="num">
+                <span style="font-size:20px;color:#9FBFBC;">/</span>
+                <input id="inDia" type="number" placeholder="82" style="flex:1;padding:10px;border:1.5px solid #D5E3E2;border-radius:10px;font-size:20px;font-weight:700;" class="num">
+              </div>
+              <div class="hint" style="text-align:left;margin-top:4px;">mmHg (systolic / diastolic)</div>
+            </div>
+            <div class="app-card">
+              <h4>Resting pulse</h4>
+              <input id="inHr" type="number" placeholder="74" style="width:100%;padding:10px;border:1.5px solid #D5E3E2;border-radius:10px;font-size:20px;font-weight:700;" class="num">
+              <div class="hint" style="text-align:left;margin-top:4px;">bpm</div>
+            </div>
+            <button class="phone-primary-btn" id="saveVitalsBtn" onclick="saveReading()">Save readings & build AI plan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Daily Brief Screen -->
+      <div class="app-screen" id="scr-brief">
+        <div class="appbar">
+          <button class="back-btn" onclick="goScreen('scr-home')">‹</button>
+          <div><div class="t">Your daily brief</div><div class="s">Gemini personalized plan</div></div>
+        </div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="phone-chips" id="briefPills" style="margin-bottom:12px;"></div>
+            <div class="app-card">
+              <h4>Clinical guidance</h4>
+              <div id="briefText" style="font-size:13.5px;line-height:1.6;color:#0A3A40;word-break:break-word;overflow-wrap:break-word;white-space:normal;"></div>
+            </div>
+            
+            <div class="app-card" id="briefTargets">
+              <h4>Today's AI Targets</h4>
+              <div class="targets" style="margin-bottom:0;">
+                <div class="target"><div class="tv num" id="bCal">—</div><div class="tl">kcal target</div></div>
+                <div class="target"><div class="tv num" id="bSod">—</div><div class="tl">sodium cap</div></div>
+                <div class="target"><div class="tv num" id="bSteps">—</div><div class="tl">step goal</div></div>
+              </div>
+            </div>
+
+            <div class="app-card">
+              <h4>Planned 8-Slot Menu</h4>
+              <div id="briefMenuSlots" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+
+            <div class="app-card">
+              <h4>Physical activity</h4>
+              <div id="briefActivityText" style="font-size:13px;color:#028090;font-weight:600;line-height:1.5;word-break:break-word;overflow-wrap:break-word;white-space:normal;"></div>
+            </div>
+            <button class="phone-primary-btn" style="margin-top:14px;margin-bottom:32px;" onclick="goScreen('scr-home')">Go to dashboard</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. Meal slot photo logging -->
+      <div class="app-screen" id="scr-meal">
+        <div class="appbar">
+          <button class="back-btn" onclick="goScreen('scr-home')">‹</button>
+          <div><div class="t" id="mealTitle">Log meal</div><div class="s">Gemini Flash dish recognition</div></div>
+        </div>
+        <div class="app-scroll">
+          <div class="pad">
+            <div class="photo-preview" id="photoPreview">📷</div>
+            <div id="photoStep">
+              <input type="file" accept="image/*" id="mealPhotoInput" style="display:none;" onchange="photoPicked(event)">
+              <button class="phone-primary-btn" onclick="$('mealPhotoInput').click()" style="margin-bottom:12px;">📸 Take or upload photo</button>
+              <div class="hint" style="margin-bottom:10px;">Or choose a quick demo dish:</div>
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;" id="sampleRow"></div>
+            </div>
+            <div id="suggStep" style="display:none;">
+              <div class="hint" style="text-align:left;margin-bottom:8px;font-weight:600;color:#0A3A40;">Gemini recognized dishes (select dishes to confirm):</div>
+              <div id="suggList"></div>
+              <div id="suggConfirmWrap" style="margin-top:14px;margin-bottom:28px;">
+                <button id="btnConfirmMultiMeal" class="phone-primary-btn" style="opacity:0.5;" disabled onclick="confirmSelectedSuggestions()">
+                  Select dish to confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATES_LIST = [
+  "Telangana", "Tamil Nadu", "Andhra Pradesh", "Karnataka", "Kerala",
+  "Maharashtra", "Gujarat", "Punjab", "West Bengal", "Rajasthan",
+  "Uttar Pradesh", "Bihar", "Odisha", "Madhya Pradesh", "Assam", "Haryana"
+];
+const EXCLUSION_OPTIONS = ["All meat", "Chicken", "Mutton", "Pork", "Beef", "Seafood", "Egg", "Dairy"];
+const ALLERGEN_OPTIONS = ["Nuts", "Dairy", "Gluten", "Soy", "Shellfish"];
+const MEATS = ["Chicken", "Mutton", "Pork", "Beef", "Seafood"];
+
+const MEAL_SLOTS = [
+  ['🌅', 'wake-up drink', 'Wake-up'],
+  ['🥣', 'breakfast', 'Breakfast'],
+  ['🥗', 'mid-day snack', 'Mid-day'],
+  ['🍱', 'lunch', 'Lunch'],
+  ['☕', 'evening tea', 'Tea'],
+  ['🥜', 'evening snack', 'Snack'],
+  ['🍲', 'dinner', 'Dinner'],
+  ['🥛', 'bedtime', 'Bedtime']
+];
+
+const SAMPLE_DISHES_MAP = {
+  'wake-up drink': [
+    { em: '🫖', dish: 'Warm methi water', kcal: 5, carbs_g: 1, sugar_g: 0, sodium_mg: 5, protein_g: 0 },
+    { em: '🍵', dish: 'Cinnamon green tea', kcal: 2, carbs_g: 0, sugar_g: 0, sodium_mg: 2, protein_g: 0 }
+  ],
+  'breakfast': [
+    { em: '🥞', dish: '2 Pesarattu with ginger chutney', kcal: 280, carbs_g: 42, sugar_g: 2, sodium_mg: 320, protein_g: 12 },
+    { em: '🍲', dish: 'Jowar rava vegetable upma', kcal: 220, carbs_g: 36, sugar_g: 3, sodium_mg: 280, protein_g: 6 }
+  ],
+  'mid-day snack': [
+    { em: '🥗', dish: 'Sprouted moong & cucumber salad', kcal: 110, carbs_g: 18, sugar_g: 2, sodium_mg: 80, protein_g: 6 },
+    { em: '🥒', dish: 'Guava slices with chaat masala', kcal: 60, carbs_g: 14, sugar_g: 8, sodium_mg: 40, protein_g: 2 }
+  ],
+  'lunch': [
+    { em: '🍛', dish: '2 Jonna rotis with tomato pappu', kcal: 380, carbs_g: 62, sugar_g: 4, sodium_mg: 440, protein_g: 14 },
+    { em: '🍲', dish: '2 Sajja rotis with dosakaya pappu', kcal: 410, carbs_g: 68, sugar_g: 3, sodium_mg: 460, protein_g: 15 }
+  ],
+  'evening tea': [
+    { em: '☕', dish: 'Green tea', kcal: 2, carbs_g: 0, sugar_g: 0, sodium_mg: 5, protein_g: 0 },
+    { em: '🥛', dish: 'Spiced buttermilk', kcal: 40, carbs_g: 4, sugar_g: 3, sodium_mg: 120, protein_g: 3 }
+  ],
+  'evening snack': [
+    { em: '🥜', dish: 'Roasted chana chaat', kcal: 140, carbs_g: 22, sugar_g: 2, sodium_mg: 200, protein_g: 7 },
+    { em: '🍿', dish: 'Plain roasted makhana', kcal: 90, carbs_g: 16, sugar_g: 0, sodium_mg: 60, protein_g: 3 }
+  ],
+  'dinner': [
+    { em: '🍲', dish: 'Samalu khichdi with lauki sabzi', kcal: 310, carbs_g: 52, sugar_g: 3, sodium_mg: 390, protein_g: 9 },
+    { em: '🍛', dish: 'Foxtail millet khichdi with cucumber raita', kcal: 330, carbs_g: 54, sugar_g: 3, sodium_mg: 370, protein_g: 9 }
+  ],
+  'bedtime': [
+    { em: '🥛', dish: 'Warm low-fat milk with cinnamon', kcal: 75, carbs_g: 8, sugar_g: 7, sodium_mg: 80, protein_g: 6 },
+    { em: '🍵', dish: 'Chamomile tea', kcal: 2, carbs_g: 0, sugar_g: 0, sodium_mg: 5, protein_g: 0 }
+  ]
+};
+
+// Production enforces verified-phone→patient binding server-side via Firebase Admin SDK; PoC verifies client-side with test numbers.
+const firebaseConfig = {
+  apiKey: "AIzaSyBfZjtqQX7S9Ois5QOw_iCKSRbw9WfoOwY",
+  authDomain: "vitalsync-506422.firebaseapp.com",
+  projectId: "vitalsync-506422",
+  storageBucket: "vitalsync-506422.firebasestorage.app",
+  messagingSenderId: "265946222921",
+  appId: "1:265946222921:web:400ae70130fd34d0698a98"
+};
+
+let auth = null;
+let firebaseUid = null;
+try {
+  if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    auth = firebase.auth();
+    auth.useDeviceLanguage();
+  }
+} catch (e) {
+  console.error("Firebase init error:", e);
+}
+
+let appPatientId = null;
+let appPatientDoc = null;
+let appGraph = 'sugar';
+let activeSlotIdx = null;
+let cdInterval = null;
+let setupExcl = new Set();
+let setupAllergens = new Set();
+
+const $ = id => document.getElementById(id);
+
+function toast(msg){
+  const t = $('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function calcAge(dobStr){
+  if(!dobStr) return 50;
+  const d = new Date(dobStr);
+  const now = new Date();
+  let a = now.getFullYear() - d.getFullYear();
+  return (isNaN(a) || a < 1) ? 52 : a;
+}
+
+function setLoader(show, text){
+  const l = $('phoneLoader');
+  if(l){
+    l.classList.toggle('active', show);
+    if(text && $('phoneLoaderText')) $('phoneLoaderText').textContent = text;
+  }
+}
+
+function formatExclusions(exclList){
+  if(!exclList || !exclList.length) return '';
+  const meats = new Set(["Chicken", "Mutton", "Pork", "Beef", "Seafood"]);
+  const hasAllMeat = exclList.some(e => e && e.toLowerCase() === 'all meat');
+  let list = [];
+  if(hasAllMeat){
+    list.push("All meat");
+    exclList.forEach(e => {
+      if(e && !meats.has(e) && e.toLowerCase() !== 'all meat') list.push(e);
+    });
+  } else {
+    list = [...exclList];
+  }
+  return list.join(', ');
+}
+
+function goScreen(id){
+  document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('visible'));
+  const el = $(id);
+  if(el) el.classList.add('visible');
+}
+
+/* =================== INIT & DEMO PICKER =================== */
+window.addEventListener('DOMContentLoaded', async () => {
+  if($('setupStateSelect')) $('setupStateSelect').innerHTML = STATES_LIST.map(s => `<option value="${s}">${s}</option>`).join('');
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const pidParam = urlParams.get('pid');
+  const tokenParam = urlParams.get('token');
+  const path = window.location.pathname;
+
+  // PoC convenience over synthetic data; in production, this is replaced by the tokenized enrollment link + OTP flow.
+  if(pidParam){
+    localStorage.setItem('vitalsync_patient_id', pidParam);
+    appPatientId = pidParam;
+    await loadAppPatient(appPatientId);
+    return;
+  }
+
+  let token = tokenParam;
+  if(!token && path.startsWith('/join/')){
+    token = path.split('/join/')[1];
+  }
+
+  if(token){
+    try {
+      setLoader(true, 'Loading invitation...');
+      const res = await fetch(`/api/invite/${token}`);
+      if(res.ok){
+        const p = await res.json();
+        appPatientId = p.id;
+        localStorage.setItem('vitalsync_patient_id', p.id);
+        await loadAppPatient(appPatientId);
+        return;
+      }
+    } catch(e){
+      console.error('Invite load error:', e);
+    } finally {
+      setLoader(false);
+    }
+  }
+
+  const savedPid = localStorage.getItem('vitalsync_patient_id');
+  if(savedPid){
+    appPatientId = savedPid;
+    await loadAppPatient(appPatientId);
+  } else {
+    await renderDemoPicker();
+    goScreen('scr-picker');
+  }
+});
+
+async function renderDemoPicker(){
+  try {
+    const res = await fetch('/api/org/patients');
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const patients = await res.json();
+    
+    // Only show ACTIVE demo patients (exclude INVITED)
+    const activePatients = patients.filter(p => p.status === 'active');
+    
+    if(!activePatients.length){
+      $('pickerList').innerHTML = `<div style="text-align:center;font-size:12.5px;color:#5E7477;">No active demo patients found.</div>`;
+      return;
+    }
+
+    $('pickerList').innerHTML = activePatients.map(p => {
+      const age = calcAge(p.dob);
+      return `
+        <div class="picker-patient-card" onclick="selectDemoPatient('${p.id}')">
+          <div>
+            <div class="picker-name">${p.name}</div>
+            <div class="picker-meta">${age} yrs · ${p.gender || '—'} · ${p.state || 'Telangana'}</div>
+          </div>
+          <div class="picker-arrow">→</div>
+        </div>
+      `;
+    }).join('');
+  } catch(e){
+    $('pickerList').innerHTML = `<div style="color:#C0392B;font-size:12px;text-align:center;">Failed to load demo patients: ${e.message}</div>`;
+  }
+}
+
+async function selectDemoPatient(pid){
+  localStorage.setItem('vitalsync_patient_id', pid);
+  appPatientId = pid;
+  await loadAppPatient(pid);
+}
+
+function switchPatientDemo(){
+  localStorage.removeItem('vitalsync_patient_id');
+  appPatientId = null;
+  appPatientDoc = null;
+  renderDemoPicker();
+  goScreen('scr-picker');
+}
+
+/* =================== ONBOARDING FLOW (FIREBASE PHONE AUTH) =================== */
+function renderInvitationScreen(prof){
+  if(!prof) return;
+  if($('invPatientName')) $('invPatientName').textContent = prof.name || 'Patient';
+  const phone = prof.phone || '+91 5555012345';
+  if($('invPhoneDisplay')) $('invPhoneDisplay').textContent = phone;
+  if($('authPhoneInput')) $('authPhoneInput').value = phone;
+}
+
+function showPhoneStep(){
+  $('otpStepPhone').style.display = 'block';
+  $('otpStepCode').style.display = 'none';
+  hideOtpError();
+}
+
+function showOtpError(msg){
+  const el = $('otpErr');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideOtpError(){
+  const el = $('otpErr');
+  if(!el) return;
+  el.textContent = '';
+  el.style.display = 'none';
+}
+
+function startPhoneAuth(){
+  showPhoneStep();
+  goScreen('scr-otp');
+}
+
+async function sendOtpCode(){
+  const phone = ($('authPhoneInput').value || '').trim();
+  if(!phone.startsWith('+') || phone.length < 8){
+    showOtpError('Please enter full phone number with country code (e.g. +91 5555012345)');
+    return;
+  }
+  hideOtpError();
+
+  setLoader(true, 'Sending verification code...');
+  try {
+    if(!auth){
+      throw new Error('Firebase Auth service unavailable');
+    }
+
+    if(!window.recaptchaVerifier){
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {}
+      });
+    }
+
+    const confirmationResult = await auth.signInWithPhoneNumber(phone, window.recaptchaVerifier);
+    window.confirmationResult = confirmationResult;
+    $('otpStepPhone').style.display = 'none';
+    $('otpStepCode').style.display = 'block';
+    $('otpSentPhone').textContent = phone;
+    $('otpCodeInput').value = '';
+    $('otpCodeInput').focus();
+  } catch(err){
+    console.error('Firebase signInWithPhoneNumber error:', err);
+    showOtpError(err.message || 'Failed to send OTP code. Please check the phone number.');
+    if(window.grecaptcha && window.recaptchaVerifier){
+      try {
+        const widgetId = await window.recaptchaVerifier.render();
+        grecaptcha.reset(widgetId);
+      } catch(_) {}
+    }
+  } finally {
+    setLoader(false);
+  }
+}
+
+async function confirmOtpCode(){
+  const code = ($('otpCodeInput').value || '').trim();
+  if(!code){
+    showOtpError('Please enter the 6-digit verification code');
+    return;
+  }
+  hideOtpError();
+
+  if(!window.confirmationResult){
+    showOtpError('Session expired. Please request a new verification code.');
+    showPhoneStep();
+    return;
+  }
+
+  setLoader(true, 'Verifying OTP code...');
+  try {
+    const result = await window.confirmationResult.confirm(code);
+    firebaseUid = result.user ? result.user.uid : null;
+    hideOtpError();
+    renderVerifyRows();
+    goScreen('scr-verify');
+  } catch(err){
+    console.error('Firebase OTP confirm error:', err);
+    showOtpError('Invalid verification code — please check and try again.');
+  } finally {
+    setLoader(false);
+  }
+}
+
+function renderVerifyRows(){
+  const p = appPatientDoc?.profile || {};
+  $('verifyRows').innerHTML = `
+    <div class="verify-row"><div><div class="vl">Name</div><div class="vv">${p.name || 'Patient'}</div></div></div>
+    <div class="verify-row"><div><div class="vl">Gender</div><div class="vv">${p.gender || 'Male'}</div></div></div>
+    <div class="verify-row"><div class="vl">Date of birth</div><input id="vDob" type="date" value="${p.dob || '1970-01-01'}"></div>
+    <div class="verify-row"><div class="vl">Height (cm)</div><input id="vH" type="number" value="${p.height_cm || 170}"></div>
+    <div class="verify-row" style="border-bottom:none;"><div class="vl">Weight (kg)</div><input id="vW" type="number" value="${p.weight_kg || 75}"></div>
+  `;
+}
+
+function renderSetupChips(){
+  $('setupExclusionChips').innerHTML = EXCLUSION_OPTIONS.map(e => `
+    <button type="button" class="p-chip ${setupExcl.has(e) ? 'on' : ''}" onclick="toggleSetupExcl('${e}')">${e}</button>
+  `).join('');
+  $('setupAllergenChips').innerHTML = ALLERGEN_OPTIONS.map(a => `
+    <button type="button" class="p-chip ${setupAllergens.has(a) ? 'on' : ''}" onclick="toggleSetupAllergen('${a}')">${a}</button>
+  `).join('');
+}
+
+function toggleSetupExcl(e){
+  if(e === "All meat"){
+    if(setupExcl.has("All meat")){
+      setupExcl.delete("All meat");
+      MEATS.forEach(m => setupExcl.delete(m));
+    } else {
+      setupExcl.add("All meat");
+      MEATS.forEach(m => setupExcl.add(m));
+    }
+  } else {
+    if(setupExcl.has(e)){
+      setupExcl.delete(e);
+      if(MEATS.includes(e)) setupExcl.delete("All meat");
+    } else {
+      setupExcl.add(e);
+      if(MEATS.every(m => setupExcl.has(m))) setupExcl.add("All meat");
+    }
+  }
+  renderSetupChips();
+}
+
+function toggleSetupAllergen(a){
+  setupAllergens.has(a) ? setupAllergens.delete(a) : setupAllergens.add(a);
+  renderSetupChips();
+}
+
+let setupScreenOrigin = 'scr-verify';
+
+function openProfileSetup(){
+  setupScreenOrigin = 'scr-home';
+  const p = appPatientDoc?.profile || {};
+  setupExcl = new Set(p.food_exclusions || []);
+  setupAllergens = new Set(p.allergens || []);
+  if($('setupStateSelect') && p.state) $('setupStateSelect').value = p.state;
+  renderSetupChips();
+  goScreen('scr-setup');
+}
+
+function handleSetupBack(){
+  goScreen(setupScreenOrigin || 'scr-verify');
+}
+
+async function finishSetup(){
+  const btn = $('btnFinishSetup');
+  btn.textContent = 'Saving preferences...';
+  btn.disabled = true;
+
+  try {
+    const p = appPatientDoc?.profile || {};
+    const dob = $('vDob') ? $('vDob').value : (p.dob || null);
+    const height_cm = $('vH') ? parseFloat($('vH').value) : (p.height_cm || null);
+    const weight_kg = $('vW') ? parseFloat($('vW').value) : (p.weight_kg || null);
+    const state = $('setupStateSelect').value;
+
+    const payload = {
+      patient_id: appPatientId,
+      state,
+      food_exclusions: Array.from(setupExcl),
+      allergens: Array.from(setupAllergens),
+      status: 'active'
+    };
+    if(dob) payload.dob = dob;
+    if(height_cm) payload.height_cm = height_cm;
+    if(weight_kg) payload.weight_kg = weight_kg;
+    if(firebaseUid){
+      payload.firebase_uid = firebaseUid;
+    }
+
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    localStorage.setItem('vitalsync_patient_id', appPatientId);
+    await loadAppPatient(appPatientId);
+    goScreen('scr-home');
+    toast('Preferences saved ✓');
+  } catch(err){
+    toast('Error: ' + err.message);
+  } finally {
+    btn.textContent = 'Save preferences';
+    btn.disabled = false;
+  }
+}
+
+/* =================== PATIENT DASHBOARD & TELEMETRY =================== */
+async function loadAppPatient(pid){
+  try {
+    setLoader(true, 'Loading record...');
+    appPatientId = pid;
+    localStorage.setItem('vitalsync_patient_id', pid);
+    const res = await fetch(`/api/patient/${pid}`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    appPatientDoc = await res.json();
+    const prof = appPatientDoc.profile || {};
+    setupExcl = new Set(prof.food_exclusions || []);
+    setupAllergens = new Set(prof.allergens || []);
+    if($('setupStateSelect') && prof.state) $('setupStateSelect').value = prof.state;
+    renderSetupChips();
+
+    if(prof.status === 'active'){
+      renderAppHome();
+      goScreen('scr-home');
+    } else {
+      renderInvitationScreen(prof);
+      goScreen('scr-link');
+    }
+  } catch(e){
+    toast('Error: ' + e.message);
+    goScreen('scr-link');
+  } finally {
+    setLoader(false);
+  }
+}
+
+function renderAppHome(){
+  if(!appPatientDoc || !appPatientDoc.profile) return;
+  const p = appPatientDoc.profile;
+  const meals = appPatientDoc.meals_today || [];
+  const plan = appPatientDoc.plan_today || null;
+
+  $('homeName').textContent = `Hi ${p.name.split(' ')[0]} 👋`;
+  $('homeProfileState').textContent = `${p.state || 'Telangana'} Cuisine`;
+  const exclList = p.food_exclusions || [];
+  $('homeProfileExcl').textContent = exclList.length ? `Excludes: ${formatExclusions(exclList)}` : 'No exclusions';
+
+  // 3-tile targets
+  if(plan && plan.targets){
+    if($('tCal')) $('tCal').textContent = plan.targets.kcal || '—';
+    if($('tSod')) $('tSod').textContent = plan.targets.sodium_g ? `${plan.targets.sodium_g} g` : (plan.targets.sodium_mg ? `${(plan.targets.sodium_mg/1000).toFixed(1)} g` : '—');
+    if($('tSteps')) $('tSteps').textContent = plan.targets.steps ? Number(plan.targets.steps).toLocaleString() : '—';
+  } else {
+    if($('tCal')) $('tCal').textContent = '—';
+    if($('tSod')) $('tSod').textContent = '—';
+    if($('tSteps')) $('tSteps').textContent = '—';
+  }
+
+  if($('homeActivityText')){
+    if(plan && plan.activity){
+      $('homeActivityText').textContent = plan.activity;
+      $('homeActivityText').style.color = '#0A3A40';
+    } else {
+      $('homeActivityText').textContent = 'Your activity plan appears after your morning reading';
+      $('homeActivityText').style.color = '#5E7477';
+    }
+  }
+
+  // Re-openable Daily Brief Card
+  const homeBriefCard = $('homeBriefCard');
+  const alertBadge = $('homeBriefAlertBadge');
+  const v = appPatientDoc?.vitals?.[0];
+  const isAlert = !!(plan?.alert || (v && (v.sugar >= 250 || v.sys >= 180)));
+
+  if(alertBadge){
+    alertBadge.style.display = isAlert ? 'inline-block' : 'none';
+  }
+  if(homeBriefCard){
+    if(isAlert){
+      homeBriefCard.style.border = '1.5px solid #C0392B';
+      homeBriefCard.style.boxShadow = '0 2px 10px rgba(192,57,43,.25)';
+    } else {
+      homeBriefCard.style.border = 'none';
+      homeBriefCard.style.boxShadow = '0 2px 8px rgba(10,58,64,.07)';
+    }
+    if(plan && plan.brief){
+      $('homeBriefAction').textContent = 'View full brief →';
+      const firstLine = plan.brief.split('\n').filter(l => l.trim().length > 0)[0] || plan.brief;
+      $('homeBriefSnippet').textContent = firstLine;
+    } else {
+      $('homeBriefAction').textContent = 'Log vitals →';
+      $('homeBriefSnippet').textContent = 'Log your morning reading to get today\'s brief.';
+    }
+  }
+
+  const mealMap = {};
+  meals.forEach(m => { mealMap[(m.slot || '').toLowerCase()] = m.dish; });
+  const suggMap = {};
+  if(plan?.meal_plan){
+    plan.meal_plan.forEach(s => { suggMap[(s.slot || '').toLowerCase()] = s.suggestion; });
+  }
+
+  $('mealCount').textContent = `· ${Object.keys(mealMap).length}/8 logged`;
+  $('slotGrid').innerHTML = MEAL_SLOTS.map((s, idx) => {
+    const isDone = !!mealMap[s[1]];
+    const dish = mealMap[s[1]];
+    const sugg = suggMap[s[1]];
+    return `
+      <div class="p-slot ${isDone ? 'done' : ''}" onclick="openMealSlot(${idx})">
+        <div class="em">${isDone ? '✅' : s[0]}</div>
+        <div class="lbl">${s[2]}</div>
+        ${!isDone && sugg ? `<div class="sugg-lbl">${sugg}</div>` : ''}
+        ${isDone && dish ? `<div class="sugg-lbl done">${dish}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  setAppGraph(appGraph);
+}
+
+function renderDailyBriefScreen(plan, vitals){
+  const v = vitals || plan?.vitals || appPatientDoc?.vitals?.[0];
+  if(v){
+    const hi = v.sugar >= 130;
+    const crit = v.sugar >= 250 || v.sys >= 180;
+    $('briefPills').innerHTML = `
+      <span class="p-chip ${hi ? 'on' : ''}">Sugar ${v.sugar} mg/dL</span>
+      <span class="p-chip">BP ${v.sys}/${v.dia}</span>
+      <span class="p-chip">HR ${v.hr} bpm</span>
+      ${crit ? '<span class="p-chip on" style="background:#C0392B;">Care Team Alerted</span>' : ''}
+    `;
+  } else {
+    $('briefPills').innerHTML = `<span class="p-chip">Plan Telemetry Active</span>`;
+  }
+
+  $('briefText').textContent = plan?.brief || 'Log your morning reading to get today\'s personalized clinical brief.';
+
+  if(plan && plan.targets){
+    if($('bCal')) $('bCal').textContent = plan.targets.kcal || '—';
+    if($('bSod')) $('bSod').textContent = plan.targets.sodium_g ? `${plan.targets.sodium_g} g` : (plan.targets.sodium_mg ? `${(plan.targets.sodium_mg/1000).toFixed(1)} g` : '—');
+    if($('bSteps')) $('bSteps').textContent = plan.targets.steps ? Number(plan.targets.steps).toLocaleString() : '—';
+  } else {
+    if($('bCal')) $('bCal').textContent = '—';
+    if($('bSod')) $('bSod').textContent = '—';
+    if($('bSteps')) $('bSteps').textContent = '—';
+  }
+
+  const planSlots = plan?.meal_plan || [];
+  const slotMap = {};
+  planSlots.forEach(s => { slotMap[(s.slot || '').toLowerCase()] = s; });
+
+  $('briefMenuSlots').innerHTML = MEAL_SLOTS.map(def => {
+    const key = def[1];
+    const name = def[2];
+    const em = def[0];
+    const matched = slotMap[key.toLowerCase()] || {};
+    const dish = matched.suggestion || (plan ? 'Healthy diabetes-friendly meal' : 'Planned dish appears after vitals');
+    const kcal = matched.kcal || 0;
+    return `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:9px 10px;background:#F6F8F9;border:1px solid #E3E8EA;border-radius:8px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0;">
+          <span style="font-size:16px;flex-shrink:0;margin-top:2px;">${em}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:9.5px;font-weight:700;color:#5E7477;text-transform:uppercase;letter-spacing:0.04em;">${name}</div>
+            <div style="font-size:12.5px;font-weight:600;color:${matched.suggestion ? '#0A3A40' : '#5E7477'};line-height:1.4;word-break:break-word;overflow-wrap:break-word;white-space:normal;margin-top:2px;">${dish}</div>
+          </div>
+        </div>
+        <div class="num" style="font-size:11px;font-weight:700;color:#028090;background:#E8F5F4;padding:3px 7px;border-radius:6px;flex-shrink:0;margin-left:4px;white-space:nowrap;">${kcal} kcal</div>
+      </div>
+    `;
+  }).join('');
+
+  if($('briefActivityText')){
+    if(plan && plan.activity){
+      $('briefActivityText').textContent = `Recommended: ${plan.activity}`;
+      $('briefActivityText').style.color = '#028090';
+    } else {
+      $('briefActivityText').textContent = 'Your activity plan appears after your morning reading';
+      $('briefActivityText').style.color = '#5E7477';
+    }
+  }
+}
+
+function openDailyBrief(){
+  const plan = appPatientDoc?.plan_today;
+  if(plan){
+    renderDailyBriefScreen(plan, plan.vitals || appPatientDoc?.vitals?.[0]);
+    goScreen('scr-brief');
+  } else {
+    startCountdown();
+  }
+}
+
+function handleHomeBriefCardClick(){
+  openDailyBrief();
+}
+
+function setAppGraph(kind){
+  appGraph = kind;
+  $('tabSugar').classList.toggle('on', kind === 'sugar');
+  $('tabBP').classList.toggle('on', kind === 'bp');
+  $('tabHR').classList.toggle('on', kind === 'hr');
+
+  const vitals = (appPatientDoc?.vitals || []).slice(0, 5).reverse();
+  if(!vitals.length){
+    $('homeSparkSvg').innerHTML = '';
+    $('homeSparkHint').textContent = 'No readings recorded.';
+    return;
+  }
+  const vals = kind === 'sugar' ? vitals.map(v => v.sugar) : (kind === 'bp' ? vitals.map(v => v.sys) : vitals.map(v => v.hr));
+  
+  const svgEl = $('homeSparkSvg');
+  const w = 300, h = 52, pad = 6;
+  const mn = Math.min(...vals), mx = Math.max(...vals), rng = (mx - mn) || 1;
+  const pts = vals.map((v, i) => [
+    pad + i * (w - 2 * pad) / (vals.length - 1 || 1),
+    h - pad - ((v - mn) / rng) * (h - 2 * pad)
+  ]);
+  const d = pts.map((pt, i) => (i ? 'L' : 'M') + pt[0].toFixed(1) + ',' + pt[1].toFixed(1)).join(' ');
+  svgEl.innerHTML = `
+    <line x1="${pad}" y1="${h/2}" x2="${w-pad}" y2="${h/2}" stroke="#D5E3E2" stroke-width="1" stroke-dasharray="2 2"/>
+    <path d="${d}" fill="none" stroke="#028090" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${pts.map((pt, i) => `<circle cx="${pt[0]}" cy="${pt[1]}" r="${i === pts.length-1 ? '4' : '3'}" fill="#028090"/>`).join('')}
+  `;
+
+  const latest = vals[vals.length - 1];
+  const unit = kind === 'sugar' ? 'mg/dL' : (kind === 'bp' ? 'mmHg (Sys)' : 'bpm');
+  $('homeSparkHint').textContent = `Latest: ${latest} ${unit}`;
+}
+
+/* =================== VITALS ENTRY & COUNTDOWN =================== */
+function startCountdown(){
+  goScreen('scr-count');
+  let sec = 60;
+  $('cdNum').textContent = sec;
+  clearInterval(cdInterval);
+  cdInterval = setInterval(() => {
+    sec--;
+    $('cdNum').textContent = sec;
+    if(sec <= 0){
+      clearInterval(cdInterval);
+      endCountdown();
+    }
+  }, 1000);
+}
+
+function endCountdown(){
+  clearInterval(cdInterval);
+  goScreen('scr-entry');
+}
+
+async function saveReading(){
+  const sugar = parseFloat($('inSugar').value);
+  const sys = parseFloat($('inSys').value);
+  const dia = parseFloat($('inDia').value);
+  const hr = parseFloat($('inHr').value);
+
+  if(!sugar || !sys || !dia || !hr){
+    toast('Please fill all reading fields');
+    return;
+  }
+  if(sugar < 30 || sugar > 600 || sys < 60 || sys > 260 || dia < 30 || dia > 160 || hr < 30 || hr > 220){
+    toast('Readings out of medical range');
+    return;
+  }
+
+  const btn = $('saveVitalsBtn');
+  btn.textContent = 'Planning day...';
+  btn.disabled = true;
+
+  const prevGenAt = appPatientDoc?.plan_today?.generated_at ? new Date(appPatientDoc.plan_today.generated_at).getTime() : 0;
+  const submitTime = Date.now();
+
+  setLoader(true, 'Preparing your plan…');
+
+  try {
+    const res = await fetch('/api/vitals', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ patient_id: appPatientId, sugar, sys, dia, hr })
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const vitalsResult = await res.json();
+    let plan = vitalsResult.plan || null;
+
+    const isPlanFresh = (p) => {
+      if(!p || !p.generated_at) return false;
+      const genTime = new Date(p.generated_at).getTime();
+      return genTime > prevGenAt || genTime >= (submitTime - 2000);
+    };
+
+    if(!isPlanFresh(plan)){
+      for(let i = 0; i < 18; i++){
+        await new Promise(r => setTimeout(r, 2500));
+        const pRes = await fetch(`/api/patient/${appPatientId}`);
+        if(pRes.ok){
+          const pData = await pRes.json();
+          if(isPlanFresh(pData.plan_today)){
+            plan = pData.plan_today;
+            appPatientDoc = pData;
+            break;
+          }
+        }
+      }
+    }
+
+    await loadAppPatient(appPatientId);
+    const activePlan = plan || appPatientDoc?.plan_today;
+    renderDailyBriefScreen(activePlan, { sugar, sys, dia, hr });
+    goScreen('scr-brief');
+    toast('Vitals recorded & daily plan ready ✓');
+  } catch(err){
+    toast('Submission error: ' + err.message);
+  } finally {
+    btn.textContent = 'Save readings & build AI plan';
+    btn.disabled = false;
+    setLoader(false);
+  }
+}
+
+/* =================== MEAL RECOGNITION & MULTI-SELECT =================== */
+function openMealSlot(idx){
+  activeSlotIdx = idx;
+  const slotDef = MEAL_SLOTS[idx];
+  $('mealTitle').textContent = `Log: ${slotDef[2]}`;
+  $('photoPreview').innerHTML = '📷';
+  $('photoStep').style.display = 'block';
+  $('suggStep').style.display = 'none';
+
+  const samples = SAMPLE_DISHES_MAP[slotDef[1]] || SAMPLE_DISHES_MAP['breakfast'];
+  $('sampleRow').innerHTML = samples.map((d, i) => `
+    <button type="button" class="p-chip" style="font-size:20px;padding:8px 12px;" title="${d.dish}" onclick="pickSampleDish(${i})">${d.em}</button>
+  `).join('');
+
+  goScreen('scr-meal');
+}
+
+function photoPicked(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const dataUrl = e.target.result;
+    $('photoPreview').innerHTML = `<img src="${dataUrl}" alt="Meal Photo">`;
+    await analyzeMealPhoto(dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+function pickSampleDish(sampleIdx){
+  const slotKey = MEAL_SLOTS[activeSlotIdx][1];
+  const samples = SAMPLE_DISHES_MAP[slotKey] || SAMPLE_DISHES_MAP['breakfast'];
+  const chosen = samples[sampleIdx];
+  $('photoPreview').innerHTML = `<span style="font-size:64px">${chosen.em}</span>`;
+  renderSuggestions([chosen, ...samples.filter((_, i) => i !== sampleIdx)]);
+}
+
+async function analyzeMealPhoto(b64){
+  setLoader(true, 'Gemini Flash Vision is recognizing meal nutrition...');
+  const slotKey = MEAL_SLOTS[activeSlotIdx][1];
+
+  try {
+    const res = await fetch('/api/meal-photo', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        patient_id: appPatientId,
+        slot: slotKey,
+        image_b64: b64
+      })
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const suggestions = data.suggestions || [];
+    renderSuggestions(suggestions);
+  } catch(err){
+    toast('Vision API error: ' + err.message);
+    const samples = SAMPLE_DISHES_MAP[slotKey] || SAMPLE_DISHES_MAP['breakfast'];
+    renderSuggestions(samples);
+  } finally {
+    setLoader(false);
+  }
+}
+
+let currentSuggestions = [];
+let selectedSuggestionIndices = new Set();
+
+function renderSuggestions(suggs){
+  $('photoStep').style.display = 'none';
+  $('suggStep').style.display = 'block';
+
+  currentSuggestions = Array.isArray(suggs) ? suggs : [];
+  selectedSuggestionIndices = new Set();
+  updateSuggestionsListUI();
+}
+
+function updateSuggestionsListUI(){
+  if(!currentSuggestions.length){
+    $('suggList').innerHTML = `<div style="font-size:13px;color:#5E7477;text-align:center;padding:12px;">No clear dishes recognized. Tap back to retry.</div>`;
+    if($('suggConfirmWrap')) $('suggConfirmWrap').style.display = 'none';
+    return;
+  }
+  if($('suggConfirmWrap')) $('suggConfirmWrap').style.display = 'block';
+
+  $('suggList').innerHTML = currentSuggestions.map((s, idx) => {
+    const isSelected = selectedSuggestionIndices.has(idx);
+    return `
+      <div class="sugg-card ${isSelected ? 'selected' : ''}" onclick="toggleSuggestionSelect(${idx})">
+        <div class="sugg-check ${isSelected ? 'checked' : ''}">${isSelected ? '✓' : ''}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="sn">${s.dish || 'Meal'}</div>
+          <div class="sc num">${s.kcal || 0} kcal · ${s.carbs_g || 0}g carbs · ${s.sugar_g || 0}g sugar · ${s.sodium_mg || 0}mg Na · ${s.protein_g || 0}g protein</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  updateConfirmButton();
+}
+
+function toggleSuggestionSelect(idx){
+  if(selectedSuggestionIndices.has(idx)){
+    selectedSuggestionIndices.delete(idx);
+  } else {
+    selectedSuggestionIndices.add(idx);
+  }
+  updateSuggestionsListUI();
+}
+
+function updateConfirmButton(){
+  const btn = $('btnConfirmMultiMeal');
+  if(!btn) return;
+  const summary = getSelectedNutritionSummary();
+  if(summary.count === 0){
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.textContent = 'Select dish to confirm';
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.textContent = `Confirm selection (${summary.count}) · ${summary.kcal} kcal`;
+  }
+}
+
+function getSelectedNutritionSummary(){
+  const indices = Array.from(selectedSuggestionIndices).sort((a, b) => a - b);
+  let dishNames = [];
+  let totalKcal = 0;
+  let totalCarbs = 0;
+  let totalSugar = 0;
+  let totalSodium = 0;
+  let totalProtein = 0;
+
+  indices.forEach(idx => {
+    const s = currentSuggestions[idx];
+    if(s){
+      dishNames.push(s.dish || 'Meal');
+      totalKcal += Math.round(Number(s.kcal) || 0);
+      totalCarbs += Math.round(Number(s.carbs_g) || 0);
+      totalSugar += Math.round(Number(s.sugar_g) || 0);
+      totalSodium += Math.round(Number(s.sodium_mg) || 0);
+      totalProtein += Math.round(Number(s.protein_g) || 0);
+    }
+  });
+
+  return {
+    dish: dishNames.join(' + '),
+    kcal: totalKcal,
+    carbs_g: totalCarbs,
+    sugar_g: totalSugar,
+    sodium_mg: totalSodium,
+    protein_g: totalProtein,
+    count: indices.length
+  };
+}
+
+async function confirmSelectedSuggestions(){
+  const summary = getSelectedNutritionSummary();
+  if(!summary.count) return;
+  await confirmMeal(summary);
+}
+
+async function selectSuggestion(idx){
+  const s = currentSuggestions[idx];
+  if(!s) return;
+  await confirmMeal(s);
+}
+
+async function confirmMeal(s){
+  if(!s) return;
+  const slotIdx = activeSlotIdx !== null ? activeSlotIdx : 1;
+  const slotDef = MEAL_SLOTS[slotIdx] || MEAL_SLOTS[1];
+  const slotKey = slotDef[1];
+
+  const pid = appPatientId || localStorage.getItem('vitalsync_patient_id') || appPatientDoc?.profile?.id;
+  if(!pid){
+    toast('Error: Patient record not found. Please refresh.');
+    return;
+  }
+
+  setLoader(true, 'Saving meal nutrition...');
+  try {
+    const res = await fetch('/api/meal-confirm', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        patient_id: pid,
+        slot: slotKey,
+        dish: s.dish,
+        kcal: Number(s.kcal) || 0,
+        carbs_g: Number(s.carbs_g) || 0,
+        sugar_g: Number(s.sugar_g) || 0,
+        sodium_mg: Number(s.sodium_mg) || 0,
+        protein_g: Number(s.protein_g) || 0
+      })
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadAppPatient(pid);
+    goScreen('scr-home');
+    toast(`Logged ${s.dish} ✓`);
+  } catch(err){
+    console.error('Meal confirm error:', err);
+    toast('Confirm failed: ' + err.message);
+  } finally {
+    setLoader(false);
+  }
+}
+</script>
+</body>
+</html>

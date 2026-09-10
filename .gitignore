@@ -1,0 +1,48 @@
+# .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment, Secrets & Credentials
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.cert
+*.crt
+service-account*.json
+credentials*.json
+*credentials.json
+token.json
+client_secrets.json
+
+# Operating System & Editors
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary & Test scratch files
+scratch/
+.pytest_cache/
+.coverage
+htmlcov/

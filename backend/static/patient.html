@@ -47,7 +47,9 @@
   .hero h1 { font-size: 21px; margin-top: 10px; }
   .hero p { font-size: 13px; color: #CFE8E6; margin-top: 6px; line-height: 1.5; }
   .pad { padding: 18px; }
+  #scr-home .pad { padding: 12px 14px 24px; }
   .app-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(10,58,64,.07); margin-bottom: 14px; }
+  #scr-home .app-card { margin-bottom: 9px; }
   .app-card h4 { font-size: 13px; color: #5E7477; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
 
   /* Demo Picker */
@@ -95,13 +97,13 @@
   .appbar .s { font-size: 11px; color: #9FBFBC; }
   .back-btn { background: transparent; color: #CFE8E6; font-size: 18px; padding: 2px 6px; }
   
-  .profile-bar { background: #E8F5F4; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 12px; }
+  .profile-bar { background: #E8F5F4; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
   .profile-bar .p-info { color: #0A3A40; font-weight: 600; }
   .profile-bar .p-sub { color: #5E7477; font-size: 11px; margin-top: 2px; }
   .switch-patient-btn { background: transparent; color: #028090; font-size: 11px; font-weight: 600; text-decoration: underline; padding: 4px 0; }
 
   /* 3-tile Targets Row (Kcal, Sodium, Steps) */
-  .targets { display: flex; gap: 8px; margin-bottom: 12px; }
+  .targets { display: flex; gap: 8px; margin-bottom: 8px; }
   .target { flex: 1; background: #fff; border-radius: 12px; padding: 9px 6px; text-align: center; box-shadow: 0 2px 8px rgba(10,58,64,.07); }
   .target .tv { font-size: 16px; font-weight: 700; color: #028090; font-variant-numeric: tabular-nums; }
   .target .tl { font-size: 9.5px; color: #5E7477; margin-top: 2px; }
@@ -112,7 +114,7 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
   }
   
   .p-slot {
@@ -165,8 +167,8 @@
     display: flex;
     flex-direction: column;
     gap: 3px;
-    margin-top: 8px;
-    margin-bottom: 84px; /* Ample clearance so entire card scrolls completely above the floating + button */
+    margin-top: 4px;
+    margin-bottom: 88px; /* Ample clearance so entire card scrolls completely above the floating + button */
   }
   .activity-bar .act-lbl { font-size: 9.5px; font-weight: 700; color: #5E7477; text-transform: uppercase; letter-spacing: 0.05em; }
   .activity-bar .act-text { font-size: 13px; font-weight: 600; color: #0A3A40; line-height: 1.45; word-break: break-word; overflow-wrap: break-word; white-space: normal; }
@@ -414,6 +416,15 @@
               <button class="switch-patient-btn" onclick="switchPatientDemo()" style="margin-left:8px;flex-shrink:0;">Switch (demo)</button>
             </div>
 
+            <!-- Doctor Guidance Note Banner -->
+            <div class="app-card" id="homeGuideBanner" style="display:none;background:#FFF8E7;border:1.5px solid #F3E3B6;border-radius:16px;padding:14px 16px;margin-bottom:9px;box-shadow:0 2px 8px rgba(138,109,26,.08);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+                <div style="font-size:11px;font-weight:700;color:#8A6D1A;text-transform:uppercase;letter-spacing:0.04em;">📩 Note from Doctor</div>
+                <div id="homeGuideTime" style="font-size:11px;color:#8A6D1A;font-weight:500;"></div>
+              </div>
+              <div id="homeGuideText" style="font-size:13px;font-weight:600;color:#4A3805;line-height:1.45;word-break:break-word;overflow-wrap:break-word;white-space:normal;"></div>
+            </div>
+
             <!-- Re-openable Daily Brief Card -->
             <div class="app-card" id="homeBriefCard" style="background:#0A3A40;color:#fff;cursor:pointer;position:relative;" onclick="handleHomeBriefCardClick()">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:6px;">
@@ -450,7 +461,7 @@
             </div>
 
             <!-- Today's Meals 4x2 Fixed Grid (All 8 Slots at Once) -->
-            <div style="font-size:12px;font-weight:700;color:#5E7477;text-transform:uppercase;margin:14px 0 8px;">
+            <div style="font-size:12px;font-weight:700;color:#5E7477;text-transform:uppercase;margin:9px 0 5px;">
               Today's meals <span style="font-weight:400;text-transform:none;" id="mealCount">· 0/8 logged</span>
             </div>
             <div class="phone-slots" id="slotGrid"></div>
@@ -516,6 +527,16 @@
         <div class="app-scroll">
           <div class="pad">
             <div class="phone-chips" id="briefPills" style="margin-bottom:12px;"></div>
+            
+            <!-- Doctor Guidance Note on Brief Screen -->
+            <div class="app-card" id="briefGuideCard" style="display:none;background:#FFF8E7;border:1.5px solid #F3E3B6;border-radius:16px;padding:14px 16px;margin-bottom:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+                <div style="font-size:11px;font-weight:700;color:#8A6D1A;text-transform:uppercase;letter-spacing:0.04em;">📩 Note from Doctor</div>
+                <div id="briefGuideTime" style="font-size:11px;color:#8A6D1A;font-weight:500;"></div>
+              </div>
+              <div id="briefGuideText" style="font-size:13px;font-weight:600;color:#4A3805;line-height:1.45;word-break:break-word;overflow-wrap:break-word;white-space:normal;"></div>
+            </div>
+
             <div class="app-card">
               <h4>Clinical guidance</h4>
               <div id="briefText" style="font-size:13.5px;line-height:1.6;color:#0A3A40;word-break:break-word;overflow-wrap:break-word;white-space:normal;"></div>
@@ -587,16 +608,44 @@ const EXCLUSION_OPTIONS = ["All meat", "Chicken", "Mutton", "Pork", "Beef", "Sea
 const ALLERGEN_OPTIONS = ["Nuts", "Dairy", "Gluten", "Soy", "Shellfish"];
 const MEATS = ["Chicken", "Mutton", "Pork", "Beef", "Seafood"];
 
-const MEAL_SLOTS = [
-  ['🌅', 'wake-up drink', 'Wake-up'],
-  ['🥣', 'breakfast', 'Breakfast'],
-  ['🥗', 'mid-day snack', 'Mid-day'],
-  ['🍱', 'lunch', 'Lunch'],
-  ['☕', 'evening tea', 'Tea'],
-  ['🥜', 'evening snack', 'Snack'],
-  ['🍲', 'dinner', 'Dinner'],
-  ['🥛', 'bedtime', 'Bedtime']
+const CANONICAL_SLOTS = [
+  { key: 'wake-up drink', label: 'Wake-up', em: '🌅', full: 'Wake-up Drink' },
+  { key: 'breakfast', label: 'Breakfast', em: '🥣', full: 'Breakfast' },
+  { key: 'mid-day snack', label: 'Mid-day', em: '🥗', full: 'Mid-day Snack' },
+  { key: 'lunch', label: 'Lunch', em: '🍱', full: 'Lunch' },
+  { key: 'evening tea', label: 'Tea', em: '☕', full: 'Evening Tea' },
+  { key: 'evening snack', label: 'Snack', em: '🥜', full: 'Evening Snack' },
+  { key: 'dinner', label: 'Dinner', em: '🍲', full: 'Dinner' },
+  { key: 'bedtime', label: 'Bedtime', em: '🥛', full: 'Bedtime' }
 ];
+
+const MEAL_SLOTS = CANONICAL_SLOTS.map(s => [s.em, s.key, s.label]);
+
+function normalizeSlotKey(raw){
+  if(!raw) return '';
+  const s = String(raw).trim().toLowerCase();
+  if(s === 'wake-up drink' || s === 'wake-up' || s === 'wakeup' || s === 'wake up drink' || s === 'wake up') return 'wake-up drink';
+  if(s === 'breakfast' || s === 'morning') return 'breakfast';
+  if(s === 'mid-day snack' || s === 'mid-day' || s === 'midday snack' || s === 'midday' || s === 'morning snack') return 'mid-day snack';
+  if(s === 'lunch' || s === 'afternoon') return 'lunch';
+  if(s === 'evening tea' || s === 'tea' || s === 'afternoon tea') return 'evening tea';
+  if(s === 'evening snack' || s === 'evening snacks' || s === 'snack' || s === 'snacks') return 'evening snack';
+  if(s === 'dinner' || s === 'night meal') return 'dinner';
+  if(s === 'bedtime' || s === 'bedtime drink' || s === 'bed time' || s === 'night') return 'bedtime';
+  return s;
+}
+
+function formatLocalGuidanceTime(isoStr){
+  if(!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if(isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' +
+           d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  } catch(_) {
+    return '';
+  }
+}
 
 const SAMPLE_DISHES_MAP = {
   'wake-up drink': [
@@ -1060,6 +1109,23 @@ function renderAppHome(){
   const exclList = p.food_exclusions || [];
   $('homeProfileExcl').textContent = exclList.length ? `Excludes: ${formatExclusions(exclList)}` : 'No exclusions';
 
+  // Doctor Guidance Note Banner
+  const homeGuideBanner = $('homeGuideBanner');
+  const homeGuideText = $('homeGuideText');
+  const homeGuideTime = $('homeGuideTime');
+  if(homeGuideBanner && homeGuideText){
+    if(p.guide && p.guide.trim()){
+      homeGuideText.textContent = p.guide.trim();
+      if(homeGuideTime){
+        const gTime = formatLocalGuidanceTime(p.guide_updated_at);
+        homeGuideTime.textContent = gTime ? `Sent ${gTime}` : '';
+      }
+      homeGuideBanner.style.display = 'block';
+    } else {
+      homeGuideBanner.style.display = 'none';
+    }
+  }
+
   // 3-tile targets
   if(plan && plan.targets){
     if($('tCal')) $('tCal').textContent = plan.targets.kcal || '—';
@@ -1108,22 +1174,29 @@ function renderAppHome(){
     }
   }
 
+  // Today's Meals 8 Slots Grid (Strict canonical order)
   const mealMap = {};
-  meals.forEach(m => { mealMap[(m.slot || '').toLowerCase()] = m.dish; });
+  meals.forEach(m => {
+    const norm = normalizeSlotKey(m.slot);
+    if(norm) mealMap[norm] = m.dish;
+  });
   const suggMap = {};
-  if(plan?.meal_plan){
-    plan.meal_plan.forEach(s => { suggMap[(s.slot || '').toLowerCase()] = s.suggestion; });
+  if(plan?.meal_plan && Array.isArray(plan.meal_plan)){
+    plan.meal_plan.forEach(s => {
+      const norm = normalizeSlotKey(s.slot);
+      if(norm) suggMap[norm] = s.suggestion;
+    });
   }
 
   $('mealCount').textContent = `· ${Object.keys(mealMap).length}/8 logged`;
-  $('slotGrid').innerHTML = MEAL_SLOTS.map((s, idx) => {
-    const isDone = !!mealMap[s[1]];
-    const dish = mealMap[s[1]];
-    const sugg = suggMap[s[1]];
+  $('slotGrid').innerHTML = CANONICAL_SLOTS.map((s, idx) => {
+    const isDone = !!mealMap[s.key];
+    const dish = mealMap[s.key];
+    const sugg = suggMap[s.key];
     return `
       <div class="p-slot ${isDone ? 'done' : ''}" onclick="openMealSlot(${idx})">
-        <div class="em">${isDone ? '✅' : s[0]}</div>
-        <div class="lbl">${s[2]}</div>
+        <div class="em">${isDone ? '✅' : s.em}</div>
+        <div class="lbl">${s.label}</div>
         ${!isDone && sugg ? `<div class="sugg-lbl">${sugg}</div>` : ''}
         ${isDone && dish ? `<div class="sugg-lbl done">${dish}</div>` : ''}
       </div>
@@ -1148,6 +1221,24 @@ function renderDailyBriefScreen(plan, vitals){
     $('briefPills').innerHTML = `<span class="p-chip">Plan Telemetry Active</span>`;
   }
 
+  // Doctor Guidance Note on Brief Screen
+  const briefGuideCard = $('briefGuideCard');
+  const briefGuideText = $('briefGuideText');
+  const briefGuideTime = $('briefGuideTime');
+  const p = appPatientDoc?.profile;
+  if(briefGuideCard && briefGuideText && p){
+    if(p.guide && p.guide.trim()){
+      briefGuideText.textContent = p.guide.trim();
+      if(briefGuideTime){
+        const gTime = formatLocalGuidanceTime(p.guide_updated_at);
+        briefGuideTime.textContent = gTime ? `Sent ${gTime}` : '';
+      }
+      briefGuideCard.style.display = 'block';
+    } else {
+      briefGuideCard.style.display = 'none';
+    }
+  }
+
   $('briefText').textContent = plan?.brief || 'Log your morning reading to get today\'s personalized clinical brief.';
 
   if(plan && plan.targets){
@@ -1160,23 +1251,24 @@ function renderDailyBriefScreen(plan, vitals){
     if($('bSteps')) $('bSteps').textContent = '—';
   }
 
+  // Planned 8-Slot Menu (Strict canonical order)
   const planSlots = plan?.meal_plan || [];
   const slotMap = {};
-  planSlots.forEach(s => { slotMap[(s.slot || '').toLowerCase()] = s; });
+  planSlots.forEach(s => {
+    const norm = normalizeSlotKey(s.slot);
+    if(norm) slotMap[norm] = s;
+  });
 
-  $('briefMenuSlots').innerHTML = MEAL_SLOTS.map(def => {
-    const key = def[1];
-    const name = def[2];
-    const em = def[0];
-    const matched = slotMap[key.toLowerCase()] || {};
+  $('briefMenuSlots').innerHTML = CANONICAL_SLOTS.map(s => {
+    const matched = slotMap[s.key] || {};
     const dish = matched.suggestion || (plan ? 'Healthy diabetes-friendly meal' : 'Planned dish appears after vitals');
     const kcal = matched.kcal || 0;
     return `
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:9px 10px;background:#F6F8F9;border:1px solid #E3E8EA;border-radius:8px;">
         <div style="display:flex;align-items:flex-start;gap:8px;flex:1;min-width:0;">
-          <span style="font-size:16px;flex-shrink:0;margin-top:2px;">${em}</span>
+          <span style="font-size:16px;flex-shrink:0;margin-top:2px;">${s.em}</span>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:9.5px;font-weight:700;color:#5E7477;text-transform:uppercase;letter-spacing:0.04em;">${name}</div>
+            <div style="font-size:9.5px;font-weight:700;color:#5E7477;text-transform:uppercase;letter-spacing:0.04em;">${s.full}</div>
             <div style="font-size:12.5px;font-weight:600;color:${matched.suggestion ? '#0A3A40' : '#5E7477'};line-height:1.4;word-break:break-word;overflow-wrap:break-word;white-space:normal;margin-top:2px;">${dish}</div>
           </div>
         </div>
@@ -1336,13 +1428,13 @@ async function saveReading(){
 /* =================== MEAL RECOGNITION & MULTI-SELECT =================== */
 function openMealSlot(idx){
   activeSlotIdx = idx;
-  const slotDef = MEAL_SLOTS[idx];
-  $('mealTitle').textContent = `Log: ${slotDef[2]}`;
+  const slotDef = CANONICAL_SLOTS[idx] || CANONICAL_SLOTS[1];
+  $('mealTitle').textContent = `Log: ${slotDef.label}`;
   $('photoPreview').innerHTML = '📷';
   $('photoStep').style.display = 'block';
   $('suggStep').style.display = 'none';
 
-  const samples = SAMPLE_DISHES_MAP[slotDef[1]] || SAMPLE_DISHES_MAP['breakfast'];
+  const samples = SAMPLE_DISHES_MAP[slotDef.key] || SAMPLE_DISHES_MAP['breakfast'];
   $('sampleRow').innerHTML = samples.map((d, i) => `
     <button type="button" class="p-chip" style="font-size:20px;padding:8px 12px;" title="${d.dish}" onclick="pickSampleDish(${i})">${d.em}</button>
   `).join('');
@@ -1363,7 +1455,8 @@ function photoPicked(ev){
 }
 
 function pickSampleDish(sampleIdx){
-  const slotKey = MEAL_SLOTS[activeSlotIdx][1];
+  const slotDef = CANONICAL_SLOTS[activeSlotIdx] || CANONICAL_SLOTS[1];
+  const slotKey = slotDef.key;
   const samples = SAMPLE_DISHES_MAP[slotKey] || SAMPLE_DISHES_MAP['breakfast'];
   const chosen = samples[sampleIdx];
   $('photoPreview').innerHTML = `<span style="font-size:64px">${chosen.em}</span>`;
@@ -1372,7 +1465,8 @@ function pickSampleDish(sampleIdx){
 
 async function analyzeMealPhoto(b64){
   setLoader(true, 'Gemini Flash Vision is recognizing meal nutrition...');
-  const slotKey = MEAL_SLOTS[activeSlotIdx][1];
+  const slotDef = CANONICAL_SLOTS[activeSlotIdx] || CANONICAL_SLOTS[1];
+  const slotKey = slotDef.key;
 
   try {
     const res = await fetch('/api/meal-photo', {
@@ -1504,8 +1598,8 @@ async function selectSuggestion(idx){
 async function confirmMeal(s){
   if(!s) return;
   const slotIdx = activeSlotIdx !== null ? activeSlotIdx : 1;
-  const slotDef = MEAL_SLOTS[slotIdx] || MEAL_SLOTS[1];
-  const slotKey = slotDef[1];
+  const slotDef = CANONICAL_SLOTS[slotIdx] || CANONICAL_SLOTS[1];
+  const slotKey = slotDef.key;
 
   const pid = appPatientId || localStorage.getItem('vitalsync_patient_id') || appPatientDoc?.profile?.id;
   if(!pid){

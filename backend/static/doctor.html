@@ -1275,14 +1275,51 @@ function closeDrilldown(){
   $('drilldownPanel').classList.remove('open');
 }
 
+const CANONICAL_SLOT_KEYS = [
+  "wake-up drink",
+  "breakfast",
+  "mid-day snack",
+  "lunch",
+  "evening tea",
+  "evening snack",
+  "dinner",
+  "bedtime"
+];
+
+function normalizeSlotKey(raw){
+  if(!raw) return '';
+  const s = String(raw).trim().toLowerCase();
+  if(s === 'wake-up drink' || s === 'wake-up' || s === 'wakeup' || s === 'wake up drink' || s === 'wake up') return 'wake-up drink';
+  if(s === 'breakfast' || s === 'morning') return 'breakfast';
+  if(s === 'mid-day snack' || s === 'mid-day' || s === 'midday snack' || s === 'midday' || s === 'morning snack') return 'mid-day snack';
+  if(s === 'lunch' || s === 'afternoon') return 'lunch';
+  if(s === 'evening tea' || s === 'tea' || s === 'afternoon tea') return 'evening tea';
+  if(s === 'evening snack' || s === 'evening snacks' || s === 'snack' || s === 'snacks') return 'evening snack';
+  if(s === 'dinner' || s === 'night meal') return 'dinner';
+  if(s === 'bedtime' || s === 'bedtime drink' || s === 'bed time' || s === 'night') return 'bedtime';
+  return s;
+}
+
+function getSlotOrderIndex(slotKey){
+  const norm = normalizeSlotKey(slotKey);
+  const idx = CANONICAL_SLOT_KEYS.indexOf(norm);
+  return idx >= 0 ? idx : 99;
+}
+
 function renderDrilldownContent(data){
   const plan = data.plan || {};
   const meals = data.meals || [];
   const vitals = data.vitals || null;
-  const slots = plan.meal_plan || [];
+  const rawSlots = plan.meal_plan || [];
+  const orderedSlots = [...rawSlots].sort((a, b) => getSlotOrderIndex(a.slot) - getSlotOrderIndex(b.slot));
+  const orderedMeals = [...meals].sort((a, b) => {
+    const slotDiff = getSlotOrderIndex(a.slot) - getSlotOrderIndex(b.slot);
+    if(slotDiff !== 0) return slotDiff;
+    return (a.ts || '').localeCompare(b.ts || '');
+  });
 
   let totalEatenKcal = 0, totalEatenCarbs = 0, totalEatenSugar = 0, totalEatenSodium = 0, totalEatenProtein = 0;
-  meals.forEach(m => {
+  orderedMeals.forEach(m => {
     totalEatenKcal += parseInt(m.kcal || 0);
     totalEatenCarbs += parseInt(m.carbs_g || 0);
     totalEatenSugar += parseInt(m.sugar_g || 0);
@@ -1310,7 +1347,7 @@ function renderDrilldownContent(data){
       ${plan.activity ? `<div style="font-size:11.5px;color:var(--accent);margin-bottom:10px;font-weight:500;">Activity: ${plan.activity}</div>` : ''}
       
       <div style="border-top:1px solid var(--border);padding-top:8px;">
-        ${slots.length ? slots.map(s => `
+        ${orderedSlots.length ? orderedSlots.map(s => `
           <div class="drill-plan-slot">
             <span class="drill-slot-name">${s.slot}</span>
             <span class="drill-slot-dish">${s.suggestion || s.dish || '—'}</span>
@@ -1322,8 +1359,8 @@ function renderDrilldownContent(data){
 
     <!-- Eaten Meals Table -->
     <div class="drill-section">
-      <div class="drill-section-title">Confirmed Eaten Meals (${meals.length})</div>
-      ${meals.length ? `
+      <div class="drill-section-title">Confirmed Eaten Meals (${orderedMeals.length})</div>
+      ${orderedMeals.length ? `
         <div style="overflow-x:auto;">
           <table class="c-table">
             <thead>
@@ -1339,7 +1376,7 @@ function renderDrilldownContent(data){
               </tr>
             </thead>
             <tbody>
-              ${meals.map(m => `
+              ${orderedMeals.map(m => `
                 <tr>
                   <td class="num" style="color:var(--text-secondary);font-size:11px;white-space:nowrap;">${formatLocalTimeOnly(m.ts)}</td>
                   <td style="text-transform:capitalize;font-weight:500;white-space:nowrap;">${m.slot}</td>

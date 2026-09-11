@@ -167,13 +167,59 @@ def get_vitals_trend(patient_id: str, days: int = 7):
     return list(date_map.values())
 
 
+# ---------------- meal slot definitions ----------------
+
+CANONICAL_SLOTS = [
+    "wake-up drink",
+    "breakfast",
+    "mid-day snack",
+    "lunch",
+    "evening tea",
+    "evening snack",
+    "dinner",
+    "bedtime",
+]
+
+
+def normalize_slot(raw: str) -> str:
+    if not raw:
+        return ""
+    s = str(raw).strip().lower()
+    if s in ("wake-up drink", "wake-up", "wakeup", "wake up drink", "wake up"):
+        return "wake-up drink"
+    if s in ("breakfast", "morning"):
+        return "breakfast"
+    if s in ("mid-day snack", "mid-day", "midday snack", "midday", "morning snack"):
+        return "mid-day snack"
+    if s in ("lunch", "afternoon"):
+        return "lunch"
+    if s in ("evening tea", "tea", "afternoon tea"):
+        return "evening tea"
+    if s in ("evening snack", "evening snacks", "snack", "snacks"):
+        return "evening snack"
+    if s in ("dinner", "night meal"):
+        return "dinner"
+    if s in ("bedtime", "bedtime drink", "bed time", "night"):
+        return "bedtime"
+    return s
+
+
+def slot_sort_key(slot_name: str) -> int:
+    norm = normalize_slot(slot_name)
+    try:
+        return CANONICAL_SLOTS.index(norm)
+    except ValueError:
+        return 99
+
+
 # ---------------- meals & nutrition ----------------
 
 def log_meal(patient_id: str, slot: str, dish: str, kcal: int = 0,
              carbs_g: int = 0, sugar_g: int = 0, sodium_mg: int = 0,
              protein_g: int = 0):
+    norm_slot = normalize_slot(slot)
     entry = {
-        "slot": slot,
+        "slot": norm_slot,
         "dish": dish,
         "kcal": int(kcal or 0),
         "carbs_g": int(carbs_g or 0),
@@ -195,7 +241,7 @@ def get_meals_today(patient_id: str):
         ts = m.get("ts", "")
         if parse_ist_date(ts) == today:
             meals.append(m)
-    meals.sort(key=lambda x: x.get("ts", ""))
+    meals.sort(key=lambda x: (slot_sort_key(x.get("slot", "")), x.get("ts", "")))
     return meals
 
 
@@ -247,6 +293,11 @@ def save_plan(patient_id: str, plan: dict):
     plan["date"] = today
     if "generated_at" not in plan:
         plan["generated_at"] = now.isoformat()
+    if "meal_plan" in plan and isinstance(plan["meal_plan"], list):
+        for s in plan["meal_plan"]:
+            if isinstance(s, dict) and "slot" in s:
+                s["slot"] = normalize_slot(s["slot"])
+        plan["meal_plan"].sort(key=lambda x: slot_sort_key(x.get("slot", "")))
     _patients().document(patient_id).collection("plans").document(today).set(plan)
 
 
@@ -313,6 +364,11 @@ def get_day_detail(patient_id: str, date_str: str) -> dict:
     # 1. Plan for that day
     snap = _patients().document(patient_id).collection("plans").document(date_str).get()
     plan = snap.to_dict() if snap.exists else None
+    if plan and "meal_plan" in plan and isinstance(plan["meal_plan"], list):
+        for s in plan["meal_plan"]:
+            if isinstance(s, dict) and "slot" in s:
+                s["slot"] = normalize_slot(s["slot"])
+        plan["meal_plan"].sort(key=lambda x: slot_sort_key(x.get("slot", "")))
 
     # 2. Meals for that day
     meals = []
@@ -322,7 +378,7 @@ def get_day_detail(patient_id: str, date_str: str) -> dict:
         ts = m.get("ts", "")
         if parse_ist_date(ts) == date_str:
             meals.append(m)
-    meals.sort(key=lambda x: x.get("ts", ""))
+    meals.sort(key=lambda x: (slot_sort_key(x.get("slot", "")), x.get("ts", "")))
 
     # 3. Vitals for that day (deterministically select earliest reading by timestamp - fasting value)
     vitals_list = []
